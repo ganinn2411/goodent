@@ -92,3 +92,91 @@ body{background:radial-gradient(900px 500px at 85% -10%,#dbe7ff 0,transparent 60
 .auth-go{padding:13px;font-size:15px;width:100%}.auth-go:disabled{opacity:.7;cursor:wait}
 .auth-msg{margin:0;font-size:13px;text-align:center}.auth-msg.bad{color:var(--bad)}.auth-msg.ok{color:var(--ok)}
 @media(max-height:680px){.auth-hero .t3d{display:none}}
+
+/* =====================================================================
+   RESPONSIVE v2  (telefon / tablet / bilgisayar)  — en sonda kalmalı
+   ===================================================================== */
+html,body{max-width:100%;overflow-x:hidden}
+body.noscroll{overflow:hidden}
+img,canvas,svg{max-width:100%}
+.app{grid-template-columns:240px minmax(0,1fr)}          /* geniş tablo sütunu taşırmasın */
+.side{height:100vh;height:100dvh;overflow-y:auto}
+.cols{grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr))}
+.top h2{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.scrim{display:none}
+
+/* ---------- Tablet (901–1180px): daha dar yan menü ---------- */
+@media(min-width:901px) and (max-width:1180px){
+  .app{grid-template-columns:204px minmax(0,1fr)}
+  .side{padding:16px 8px}.side button{padding:10px}
+  .page{padding:16px}.top{padding:12px 16px}
+  .t3d{width:190px;height:170px}
+}
+
+/* ---------- Telefon + küçük tablet (≤900px): çekmece menü ---------- */
+@media(max-width:900px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{position:fixed;top:0;bottom:0;left:0;right:auto;height:auto;width:min(290px,84vw);
+    transform:translateX(-105%);transition:transform .25s ease;z-index:30;
+    padding:calc(env(safe-area-inset-top,0px) + 18px) 12px calc(env(safe-area-inset-bottom,0px) + 18px)}
+  [dir=rtl] .side{left:auto;right:0;transform:translateX(105%)}
+  .side.open,[dir=rtl] .side.open{transform:none;left:auto}
+  .side:not(.open){box-shadow:none}
+  .side.open{left:0}[dir=rtl] .side.open{left:auto;right:0}
+  .scrim{display:block;position:fixed;inset:0;background:#0f172a88;backdrop-filter:blur(2px);z-index:25}
+  .side button{padding:13px 12px;font-size:15px}
+
+  .top{padding:calc(env(safe-area-inset-top,0px) + 10px) 14px 10px;gap:10px;justify-content:flex-start}
+  .burger{display:grid;place-items:center;width:40px;height:40px;border-radius:10px;background:#eef1f7;font-size:20px;flex:none;cursor:pointer}
+  .user{margin-inline-start:auto;gap:8px;flex:none}
+  .user select{max-width:112px;padding:7px 8px}
+  .page{padding:14px 12px calc(env(safe-area-inset-bottom,0px) + 18px);gap:14px}
+  .hero{padding:18px 18px;border-radius:18px}.hero h1{font-size:21px}
+}
+
+/* ---------- Telefon (≤700px) ---------- */
+@media(max-width:700px){
+  .uname{display:none}
+  .cards{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+  .stat{padding:13px}.stat b{font-size:24px}
+  .panel{padding:14px;border-radius:14px}
+  .ph{gap:8px}.ph h3{flex:1 1 100%}
+  .ph .srch{flex:1 1 100%;min-width:0}
+  .ph select,.ph .btn{flex:1 1 auto}
+  input,select,textarea{font-size:16px}                    /* iOS otomatik yakınlaştırmayı engeller */
+  .btn{min-height:40px}
+  .bar{grid-template-columns:90px minmax(0,1fr) 26px}
+
+  /* pencere: alttan açılan sayfa */
+  .ov{align-items:end;padding:0}
+  .modal{width:100%;max-height:92vh;max-height:92dvh;border-radius:20px 20px 0 0;
+    padding:16px 16px calc(env(safe-area-inset-bottom,0px) + 18px)}
+  .tlr{grid-template-columns:12px 64px minmax(0,1fr) auto;gap:8px}
+  .tlr select{min-width:0}
+  .auth-hero h1{font-size:28px}
+
+  /* İşler listesi: tablo yerine kart */
+  table.jobs thead{display:none}
+  table.jobs,table.jobs tbody{display:block}
+  table.jobs tr.clk{display:grid;grid-template-columns:auto minmax(0,1fr);gap:5px 10px;padding:12px;margin-bottom:10px;
+    border:1px solid var(--line);border-radius:14px;background:#fff;box-shadow:0 2px 8px #0f172a0d}
+  table.jobs td{display:block;border:0;padding:0;min-width:0}
+  table.jobs td:nth-child(1){grid-column:1;font-weight:700;color:var(--acc)}
+  table.jobs td:nth-child(2){grid-column:2;font-weight:600}
+  table.jobs td:nth-child(3){grid-column:1/-1;color:var(--mut)}
+  table.jobs td:nth-child(4){grid-column:1/-1}
+  table.jobs td:nth-child(5){grid-column:1/-1}
+  table.jobs td:nth-child(6){grid-column:1;color:var(--mut);font-size:13px}
+  table.jobs td:nth-child(7){grid-column:2;text-align:end;font-size:13px}
+}
+
+/* ---------- Çok küçük ekran ---------- */
+@media(max-width:380px){
+  .cards{grid-template-columns:1fr}
+  .user select{max-width:92px}
+}
+
+/* ---------- Yatay telefon / alçak ekran ---------- */
+@media(max-height:480px) and (orientation:landscape){
+  .modal{max-height:100vh;max-height:100dvh}.hero .t3d,.auth-hero .t3d{display:none}
+}
