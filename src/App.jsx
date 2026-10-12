@@ -15,6 +15,15 @@ import { printCaseLabel, caseQrUrl } from './printCaseLabel'
   }
 }
 
+// Şifre sıfırlama e-postasındaki bağlantı ile gelindi mi? (supabase adresi temizlemeden önce yakala)
+if (/type=recovery/.test(location.hash + location.search)) sessionStorage.setItem('recovering', '1')
+const RECOVERY = sessionStorage.getItem('recovering') === '1'
+// E-postadaki bağlantının döneceği adres: .env'deki VITE_PUBLIC_URL, yoksa açık olan sayfa
+const siteUrl = () => {
+  const e = (import.meta.env.VITE_PUBLIC_URL || '').trim().replace(/\/+$/, '')
+  return (e || (/^https?:$/.test(location.protocol) ? location.origin + location.pathname.replace(/\/[^/]*$/, '') : '')) + '/'
+}
+
 const ST = { kabul:'Kabul', tasarim:'Tasarım', uretim:'Üretim', porselen:'Porselen', kalite:'Kalite', prova:'Prova', sevkiyat:'Sevkiyat', teslim:'Teslim' }
 const CS = { acik:'Açık', laboratuvarda:'Laboratuvarda', provada:'Provada', teslim_edildi:'Teslim edildi', iptal:'İptal' }
 const TX = { satis_faturasi:'Satış faturası', alis_faturasi:'Alış faturası', tahsilat:'Tahsilat', odeme:'Ödeme', gider:'Gider' }
@@ -47,6 +56,7 @@ const AR = {
 'Zirkon':'زركون','Rezin':'ريزن','Veneer':'فينير','Geçici Protez':'تركيبة مؤقتة','Gece Plağı':'واقي ليلي','Implant Üstü':'فوق الزرعة',
 'admin':'مدير','receptionist':'استقبال','designer':'مصمم','technician':'فني','ceramist':'سيراميست','qc':'مراقبة الجودة','accountant':'محاسب',
 'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam, giriş yapabilirsin.':'تم التسجيل، يمكنك الدخول.',
+'Şifremi unuttum':'نسيت كلمة المرور','Sıfırlama bağlantısını gönder':'إرسال رابط إعادة التعيين','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'اكتب بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'تم إرسال الرابط إلى بريدك الإلكتروني. تحقق من صندوق الوارد (والرسائل غير المرغوبة).','Yeni şifre belirle':'تعيين كلمة مرور جديدة','Yeni şifre (tekrar)':'كلمة المرور الجديدة (تكرار)','Şifreyi kaydet':'حفظ كلمة المرور','Şifre en az 6 karakter olmalı':'يجب ألا تقل كلمة المرور عن 6 أحرف','Şifreler aynı değil':'كلمتا المرور غير متطابقتين','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'تم تغيير كلمة المرور. جارٍ تحويلك إلى شاشة الدخول…','Şifre değişti. Yeni şifrenle giriş yap.':'تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.',
 'Açık işler':'الأعمال المفتوحة','Geciken işler':'الأعمال المتأخرة','Bugün teslim':'تسليم اليوم','Bu ay teslim edilen':'المسلَّم هذا الشهر','Aşamalara göre işler':'الأعمال حسب المرحلة','İş türü dağılımı':'توزيع أنواع العمل','Personel yükü':'عبء الموظفين','Bugün teslim / geciken':'تسليم اليوم / المتأخر','Gecikti':'متأخر','Bugün':'اليوم','Veri yok':'لا توجد بيانات','Atanmamış':'غير معيّن','Bugün teslim veya geciken iş yok 🎉':'لا توجد أعمال متأخرة أو تسلَّم اليوم 🎉',
 'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد',
 '— yeni doktor —':'— طبيب جديد —','Yeni doktor adı':'اسم الطبيب الجديد','Hasta adı':'اسم المريض','İş türü':'نوع العمل','Diş numaraları':'أرقام الأسنان','Renk':'اللون','Teslim tarihi':'تاريخ التسليم','Not':'ملاحظة','Kaydet':'حفظ','Fiyat (TL)':'السعر (TL)',
@@ -68,6 +78,7 @@ const EN = {
 'Zirkon':'Zirconia','Rezin':'Resin','Veneer':'Veneer','Geçici Protez':'Temporary prosthesis','Gece Plağı':'Night guard','Implant Üstü':'Implant crown',
 'Yönetici':'Admin','Resepsiyon':'Reception','Tasarımcı':'Designer','Teknisyen':'Technician','Seramist':'Ceramist','Kalite Kontrol':'Quality control','Muhasebe':'Accountant',
 'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam, giriş yapabilirsin.':'Registered, you can sign in now.',
+'Şifremi unuttum':'Forgot password','Sıfırlama bağlantısını gönder':'Send reset link','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'Enter your email and we will send you a password reset link.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'Link sent to your email. Check your inbox (and spam folder).','Yeni şifre belirle':'Set a new password','Yeni şifre (tekrar)':'New password (repeat)','Şifreyi kaydet':'Save password','Şifre en az 6 karakter olmalı':'Password must be at least 6 characters','Şifreler aynı değil':'Passwords do not match','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'Password changed. Redirecting to sign in…','Şifre değişti. Yeni şifrenle giriş yap.':'Password changed. Sign in with your new password.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'The link is invalid or expired. Request a new one.',
 'Açık işler':'Open jobs','Geciken işler':'Late jobs','Bugün teslim':'Due today','Bu ay teslim edilen':'Delivered this month','Aşamalara göre işler':'Jobs by stage','İş türü dağılımı':'Job type distribution','Personel yükü':'Staff workload','Bugün teslim / geciken':'Due today / late','Gecikti':'Late','Bugün':'Today','Veri yok':'No data','Atanmamış':'Unassigned','Bugün teslim veya geciken iş yok 🎉':'Nothing due today or late 🎉',
 'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake',
 '— yeni doktor —':'— new doctor —','Yeni doktor adı':'New doctor name','Hasta adı':'Patient name','İş türü':'Job type','Diş numaraları':'Tooth numbers','Renk':'Shade','Teslim tarihi':'Due date','Not':'Note','Kaydet':'Save','Fiyat (TL)':'Price (TL)',
@@ -110,43 +121,91 @@ function useTr(lang) {
 }
 
 export default function App() {
-  const [s, setS] = useState(null), [ok, setOk] = useState(false), [lang, setLang] = useState(localStorage.getItem('lang') || 'tr')
+  const [s, setS] = useState(null), [ok, setOk] = useState(false), [lang, setLang] = useState(localStorage.getItem('lang') || 'tr'), [rec, setRec] = useState(RECOVERY), [notice, setNotice] = useState('')
   useTr(lang); useTilt()
   const setL = n => { localStorage.setItem('lang', n); setLang(n) }
+  // Şifre sıfırlama bitince: oturumu KAPAT, giriş ekranına dön (otomatik giriş yok)
+  const finishRec = async msg => {
+    sessionStorage.removeItem('recovering')
+    await sb.auth.signOut({ scope: 'local' })
+    setNotice(msg || ''); setS(null); setRec(false)
+  }
   useEffect(() => {
     sb.auth.getSession().then(({ data }) => { setS(data.session); setOk(true) })
-    const { data } = sb.auth.onAuthStateChange((_e, x) => setS(x))
+    const { data } = sb.auth.onAuthStateChange((ev, x) => { if (ev === 'PASSWORD_RECOVERY') { sessionStorage.setItem('recovering', '1'); setRec(true) } setS(x) })
     return () => data.subscription.unsubscribe()
   }, [])
   if (!ok) return <div className="boot">Yükleniyor…</div>
-  return s ? <Shell user={s.user} lang={lang} setL={setL} /> : <Login lang={lang} setL={setL} />
+  if (rec) return <Recovery lang={lang} setL={setL} hasSession={!!s} onDone={finishRec} />
+  return s ? <Shell user={s.user} lang={lang} setL={setL} /> : <Login lang={lang} setL={setL} notice={notice} />
 }
 
-function Login({ lang, setL }) {
+function Login({ lang, setL, notice }) {
   const [email, setEmail] = useState(''), [pw, setPw] = useState(''), [name, setName] = useState(''), [up, setUp] = useState(false)
-  const [msg, setMsg] = useState(''), [bad, setBad] = useState(false), [busy, setBusy] = useState(false), [show, setShow] = useState(false)
+  const [msg, setMsg] = useState(notice || ''), [bad, setBad] = useState(false), [busy, setBusy] = useState(false), [show, setShow] = useState(false), [fg, setFg] = useState(false)
   async function go(e) {
     e.preventDefault()
     if (busy) return
     setBusy(true); setMsg('')
+    if (fg) {
+      const r = await sb.auth.resetPasswordForEmail(email.trim(), { redirectTo: siteUrl() })
+      setBad(!!r.error)
+      setMsg(r.error ? r.error.message : 'Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.')
+      setBusy(false); return
+    }
     const r = up ? await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { full_name: name } } }) : await sb.auth.signInWithPassword({ email: email.trim(), password: pw })
     setBad(!!r.error)
     setMsg(r.error ? r.error.message : up ? 'Kayıt tamam, giriş yapabilirsin.' : '')
     setBusy(false)
   }
-  const tab = u => { setUp(u); setMsg('') }
+  const tab = u => { setUp(u); setFg(false); setMsg('') }
   return <div className="auth">
     <div className="auth-lang"><LangPick lang={lang} setL={setL} /></div>
     <div className="auth-hero"><Tooth3D /><h1>Goodent</h1><p>Dental Laboratuvar Yönetimi</p></div>
     <form className="auth-card" onSubmit={go}>
-      <div className="auth-tabs"><button type="button" className={up ? '' : 'on'} onClick={() => tab(false)}>Giriş</button><button type="button" className={up ? 'on' : ''} onClick={() => tab(true)}>Yeni hesap</button></div>
-      {up && <label>Ad Soyad<input value={name} onChange={e => setName(e.target.value)} autoComplete="name" required /></label>}
+      {!fg && <div className="auth-tabs"><button type="button" className={up ? '' : 'on'} onClick={() => tab(false)}>Giriş</button><button type="button" className={up ? 'on' : ''} onClick={() => tab(true)}>Yeni hesap</button></div>}
+      {up && !fg && <label>Ad Soyad<input value={name} onChange={e => setName(e.target.value)} autoComplete="name" required /></label>}
       <label>E-posta<input type="email" value={email} onChange={e => setEmail(e.target.value)} autoComplete="username" required /></label>
-      <label>Şifre<div className="auth-pw"><input type={show ? 'text' : 'password'} value={pw} onChange={e => setPw(e.target.value)} autoComplete={up ? 'new-password' : 'current-password'} required />
-        <button type="button" className="auth-eye" onClick={() => setShow(!show)} aria-label="👁">{show ? '🙈' : '👁'}</button></div></label>
-      <button className="btn btn-p auth-go" disabled={busy}>{busy ? '…' : up ? 'Kayıt ol' : 'Giriş'}</button>
+      {!fg && <label>Şifre<div className="auth-pw"><input type={show ? 'text' : 'password'} value={pw} onChange={e => setPw(e.target.value)} autoComplete={up ? 'new-password' : 'current-password'} required />
+        <button type="button" className="auth-eye" onClick={() => setShow(!show)} aria-label="👁">{show ? '🙈' : '👁'}</button></div></label>}
+      {fg && <p className="auth-msg" style={{ color: 'var(--mut)' }}>E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.</p>}
+      {!fg && !up && <button type="button" className="auth-link" onClick={() => { setFg(true); setMsg('') }}>Şifremi unuttum</button>}
+      <button className="btn btn-p auth-go" disabled={busy}>{busy ? '…' : fg ? 'Sıfırlama bağlantısını gönder' : up ? 'Kayıt ol' : 'Giriş'}</button>
+      {fg && <button type="button" className="auth-link" onClick={() => { setFg(false); setMsg('') }}>Girişe dön</button>}
       {msg && <p className={'auth-msg ' + (bad ? 'bad' : 'ok')}>{msg}</p>}
     </form>
+  </div>
+}
+
+function Recovery({ lang, setL, hasSession, onDone }) {
+  const [pw, setPw] = useState(''), [pw2, setPw2] = useState(''), [show, setShow] = useState(false)
+  const [msg, setMsg] = useState(''), [bad, setBad] = useState(false), [busy, setBusy] = useState(false)
+  async function go(e) {
+    e.preventDefault()
+    if (busy) return
+    if (pw.length < 6) { setBad(true); return setMsg('Şifre en az 6 karakter olmalı') }
+    if (pw !== pw2) { setBad(true); return setMsg('Şifreler aynı değil') }
+    setBusy(true)
+    const { error } = await sb.auth.updateUser({ password: pw })
+    setBusy(false)
+    if (error) { setBad(true); return setMsg(error.message) }
+    setBad(false); setMsg('Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…')
+    setTimeout(() => onDone('Şifre değişti. Yeni şifrenle giriş yap.'), 1200)
+  }
+  return <div className="auth">
+    <div className="auth-lang"><LangPick lang={lang} setL={setL} /></div>
+    <div className="auth-hero"><Tooth3D /><h1>Goodent</h1><p>Dental Laboratuvar Yönetimi</p></div>
+    {hasSession ? <form className="auth-card" onSubmit={go}>
+      <h3 style={{ margin: 0, textAlign: 'center' }}>Yeni şifre belirle</h3>
+      <label>Yeni şifre<div className="auth-pw"><input type={show ? 'text' : 'password'} value={pw} onChange={e => setPw(e.target.value)} autoComplete="new-password" required />
+        <button type="button" className="auth-eye" onClick={() => setShow(!show)} aria-label="👁">{show ? '🙈' : '👁'}</button></div></label>
+      <label>Yeni şifre (tekrar)<input type={show ? 'text' : 'password'} value={pw2} onChange={e => setPw2(e.target.value)} autoComplete="new-password" required /></label>
+      <button className="btn btn-p auth-go" disabled={busy}>{busy ? '…' : 'Şifreyi kaydet'}</button>
+      {msg && <p className={'auth-msg ' + (bad ? 'bad' : 'ok')}>{msg}</p>}
+    </form> : <div className="auth-card">
+      <p className="auth-msg bad">Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.</p>
+      <button className="btn btn-p auth-go" onClick={() => onDone()}>Girişe dön</button>
+    </div>}
   </div>
 }
 
