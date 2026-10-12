@@ -180,3 +180,7 @@ img,canvas,svg{max-width:100%}
 @media(max-height:480px) and (orientation:landscape){
   .modal{max-height:100vh;max-height:100dvh}.hero .t3d,.auth-hero .t3d{display:none}
 }
+
+/* ===== Şifremi unuttum bağlantısı ===== */
+.auth-link{border:0;background:none;color:var(--acc);font:inherit;font-weight:600;font-size:13px;cursor:pointer;padding:2px 4px;align-self:center}
+.auth-link:hover{text-decoration:underline}
