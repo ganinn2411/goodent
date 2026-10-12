@@ -162,6 +162,7 @@ function Shell({ user, lang, setL }) {
     setCases(c.data || []); setStaff(p.data || []); setMe(m.data); setSettings(Object.fromEntries((st.data || []).map(d => [d.id, d.value])))
   }, [user.id])
   useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t) }, [load])
+  useEffect(() => { document.body.classList.toggle('noscroll', menu); return () => document.body.classList.remove('noscroll') }, [menu])
   const name = id => staff.find(s => s.id === id)?.full_name || '—'
   const rnRaw = settings.role_names || {}; RN = ROLES.some(k => k in rnRaw) ? { tr: rnRaw } : rnRaw; LANG = lang
   const role = me?.role, rp = { ...DEF, ...(settings.role_pages || {}) }
@@ -181,6 +182,7 @@ function Shell({ user, lang, setL }) {
     stok: <Stok me={me} name={name} user={user} />,
   }
   return <div className="app">
+    {menu && <div className="scrim" onClick={() => setMenu(false)} />}
     <aside className={'side ' + (menu ? 'open' : '')}>
       <div className="logo"><i>🦷</i>{settings.lab_name || 'Goodent'}</div>
       {NAV.filter(n => ok(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setMenu(false) }}>{ic} {l}</button>)}
@@ -188,7 +190,7 @@ function Shell({ user, lang, setL }) {
     </aside>
     <div className="main">
       <div className="top"><button className="burger" onClick={() => setMenu(!menu)}>☰</button><h2>{NAV.find(n => n[0] === cur)[2]}</h2>
-        <div className="user"><LangPick lang={lang} setL={setL} /><span>{me?.full_name}</span><div className="av">{(me?.full_name || '?')[0].toUpperCase()}</div></div></div>
+        <div className="user"><LangPick lang={lang} setL={setL} /><span className="uname">{me?.full_name}</span><div className="av">{(me?.full_name || '?')[0].toUpperCase()}</div></div></div>
       <div className="page" key={cur}>{pages[cur]}</div>
     </div></div>
 }
@@ -243,7 +245,7 @@ function Jobs({ cases, staff, name, load, user }) {
       <input className="srch" placeholder="Ara: hasta, doktor, no…" value={q} onChange={e => setQ(e.target.value)} />
       <select style={{ width:'auto' }} value={fs} onChange={e => setFs(e.target.value)}><option value="open">Açık işler</option><option value="all">Hepsi</option><option value="arsiv">🗄 Arşiv</option>{Object.entries(CS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
       <button className="btn btn-p" onClick={() => setNw(true)}>＋ Yeni iş</button></div>
-    <div className="tw"><table><thead><tr><th>No</th><th>Hasta</th><th>Doktor</th><th>İş</th><th>İlerleme</th><th>Sorumlu</th><th>Teslim</th></tr></thead>
+    <div className="tw"><table className="jobs"><thead><tr><th>No</th><th>Hasta</th><th>Doktor</th><th>İş</th><th>İlerleme</th><th>Sorumlu</th><th>Teslim</th></tr></thead>
       <tbody>{list.map(c => { const cs = stages(c).find(s => s.status === 'devam')
         return <tr key={c.id} className="clk" onClick={() => setSel(c.id)}><td>#{c.case_no}</td><td>{c.patients?.full_name}</td><td>{c.doctors?.full_name}</td><td><span className="pill">{c.work_type}</span></td>
           <td><Steps c={c} /><small>{ST[c.current_stage]}</small></td><td>{name(cs?.assigned_to)}</td><td>{c.due_date || '—'} {late(c) && !c.deleted_at && <span className="pill r">Gecikti</span>}</td></tr> })}</tbody></table>
