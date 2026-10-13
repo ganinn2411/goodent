@@ -4,6 +4,7 @@ import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment
 import { supabase as sb } from './supabase'
 import ScanPage from './ScanPage'
 import { printCaseLabel, caseQrUrl } from './printCaseLabel'
+import { STAGE_CODES, STAGE_DEF, STAGE_NAME_MAX, stageLabel } from './stages'
 
 // Telefonun normal kamerasıyla okunan QR: https://site/?scan=1042
 // Numarayı sakla, adresi hemen temizle (sayfa yenilenince tekrar taranmasın).
@@ -24,7 +25,9 @@ const siteUrl = () => {
   return (e || (/^https?:$/.test(location.protocol) ? location.origin + location.pathname.replace(/\/[^/]*$/, '') : '')) + '/'
 }
 
-const ST = { kabul:'Kabul', tasarim:'Tasarım', uretim:'Üretim', porselen:'Porselen', kalite:'Kalite', prova:'Prova', sevkiyat:'Sevkiyat', teslim:'Teslim' }
+// Aşama adı: yöneticinin Ayarlar'da girdiği özel ad (SN) -> yoksa dilin varsayılanı. Bkz. stages.js
+let SN = {}
+const stg = k => stageLabel(k, LANG, SN)
 const CS = { acik:'Açık', laboratuvarda:'Laboratuvarda', provada:'Provada', teslim_edildi:'Teslim edildi', iptal:'İptal' }
 const TX = { satis_faturasi:'Satış faturası', alis_faturasi:'Alış faturası', tahsilat:'Tahsilat', odeme:'Ödeme', gider:'Gider' }
 const WORK = ['Zirkon','Rezin','Veneer','Geçici Protez','Gece Plağı','Implant Üstü']
@@ -46,6 +49,7 @@ const late = c => c.due_date && !done(c) && c.due_date < today()
 
 const loc = d => { const x = new Date(d); return new Date(x - x.getTimezoneOffset() * 6e4).toISOString().slice(0, 16) }
 const AR = {
+'Aşama adları':'أسماء المراحل','Varsayılana dön':'استعادة الافتراضي','Aynı ada sahip iki aşama olamaz.':'لا يمكن أن يكون لمرحلتين الاسم نفسه.','Aşama adları varsayılana dönsün mü?':'هل تريد إعادة أسماء المراحل إلى الافتراضي؟',
 'Malzeme talepleri':'طلبات المواد','＋ Malzeme iste':'＋ طلب مادة','Malzeme iste':'طلب مادة','📝 İste':'📝 اطلب','İsteyen':'الطالب','Durum':'الحالة','Bekliyor':'قيد الانتظار','Onaylandı':'تمت الموافقة','Sipariş verildi':'تم الطلب من المورد','Geldi':'وصلت','Reddedildi':'مرفوض','Açık talepler':'الطلبات المفتوحة','Talep yok':'لا توجد طلبات','— listede yok, elle yaz —':'— غير موجودة بالقائمة، اكتب الاسم —','Talebi gönder':'إرسال الطلب','Talebi iptal et':'إلغاء الطلب',
 'Arşiv':'الأرشيف','🗄 Arşiv':'🗄 الأرشيف','♻ Geri yükle':'♻ استعادة','Bu iş arşivde':'هذه الشغلة في الأرشيف',
 'Barkod okut':'مسح الباركود','🏷 Etiket yazdır':'🏷 طباعة الملصق',
@@ -68,6 +72,7 @@ const AR = {
 'Filtre':'تصفية','Tüm doktorlar':'كل الأطباء','Toplam iş':'إجمالي الأعمال','Teslim edilen':'المسلَّمة','Teslim edilmeyen':'غير المسلَّمة','Ciro (TL)':'الإيرادات (TL)','İş türüne göre':'حسب نوع العمل','Doktora göre':'حسب الطبيب','Tasarımcı performansı':'أداء المصممين','Teknisyen performansı':'أداء الفنيين','Teslim edilen iş türleri':'أنواع الأعمال المسلَّمة','Teslim edilmeyen iş türleri':'أنواع الأعمال غير المسلَّمة',
 'Ayarlar':'الإعدادات','Genel':'عام','Laboratuvar adı':'اسم المختبر','Hesabım':'حسابي','Yeni şifre':'كلمة مرور جديدة','Şifreyi değiştir':'تغيير كلمة المرور','Yetkiler':'الصلاحيات','Rol':'الدور','Yedek':'نسخة احتياطية','Yedek indir (JSON)':'تنزيل نسخة احتياطية (JSON)','Dil':'اللغة','Hoş geldin,':'أهلاً بك،','Dental laboratuvar yönetim paneli':'لوحة إدارة مختبر الأسنان','Dental Laboratuvar Yönetimi':'إدارة مختبر الأسنان','Hangi rol hangi sayfayı görebilir. Kasa ve Cari sadece admin ile muhasebe rolüne açılabilir.':'أي دور يستطيع رؤية أي صفحة. الصندوق والحسابات الجارية للمدير والمحاسب فقط.','Tarih aralığı':'الفترة الزمنية','Tüm cariler':'كل الحسابات','🧾 Fatura / Ekstre':'🧾 فاتورة / كشف حساب','Tümü':'الكل','🖨 Yazdır / PDF':'🖨 طباعة / PDF','Fatura / Ekstre':'فاتورة / كشف حساب','Fatura / Hesap Ekstresi':'فاتورة / كشف حساب','Yönetici':'مدير','Resepsiyon':'استقبال','Tasarımcı':'مصمم','Teknisyen':'فني','Seramist':'سيراميست','Kalite Kontrol':'مراقبة الجودة','Muhasebe':'محاسب','Rol adları':'أسماء الأدوار','GG.AA.YYYY':'DD.MM.YYYY','SS:DD':'HH:MM','Dosyalar':'الملفات','＋ Dosya yükle':'＋ رفع ملف','Dosya yok':'لا توجد ملفات','👁 Aç':'👁 فتح'}
 const EN = {
+'Aşama adları':'Stage names','Varsayılana dön':'Reset to default','Aynı ada sahip iki aşama olamaz.':'Two stages cannot have the same name.','Aşama adları varsayılana dönsün mü?':'Reset stage names to default?',
 'Malzeme talepleri':'Material requests','＋ Malzeme iste':'＋ Request material','Malzeme iste':'Request material','📝 İste':'📝 Request','İsteyen':'Requested by','Durum':'Status','Bekliyor':'Pending','Onaylandı':'Approved','Sipariş verildi':'Ordered','Geldi':'Arrived','Reddedildi':'Rejected','Açık talepler':'Open requests','Talep yok':'No requests','— listede yok, elle yaz —':'— not in list, type name —','Talebi gönder':'Send request','Talebi iptal et':'Cancel request',
 'Arşiv':'Archive','🗄 Arşiv':'🗄 Archive','♻ Geri yükle':'♻ Restore','Bu iş arşivde':'This job is archived',
 'Barkod okut':'Scan barcode','🏷 Etiket yazdır':'🏷 Print label',
@@ -224,13 +229,14 @@ function Shell({ user, lang, setL }) {
   useEffect(() => { document.body.classList.toggle('noscroll', menu); return () => document.body.classList.remove('noscroll') }, [menu])
   const name = id => staff.find(s => s.id === id)?.full_name || '—'
   const rnRaw = settings.role_names || {}; RN = ROLES.some(k => k in rnRaw) ? { tr: rnRaw } : rnRaw; LANG = lang
+  SN = settings.stage_names || {}
   const role = me?.role, rp = { ...DEF, ...(settings.role_pages || {}) }
   const ok = p => p === 'dash' || p === 'tara' || role === 'admin' || (p !== 'ayar' && (!['cari', 'kasa'].includes(p) || role === 'accountant') && (rp[role] || []).includes(p))
   const cur = ok(page) ? page : 'dash'
   const saveSet = async (id, value) => { const { error } = await sb.from('app_settings').upsert({ id, value }); if (error) return alert(error.message); load() }
   const ctx = { cases, staff, me, name, load, user, settings }
   const pages = {
-    dash: <Dash {...ctx} />, stat: <Stats {...ctx} showMoney={ok('kasa')} />, ayar: <Settings {...ctx} saveSet={saveSet} lang={lang} setL={setL} />, isler: <Jobs {...ctx} />, gorev: <Mine {...ctx} />, ekip: <Team {...ctx} />, tara: <ScanPage lang={lang} onClose={() => setPage('dash')} />,
+    dash: <Dash {...ctx} />, stat: <Stats {...ctx} showMoney={ok('kasa')} />, ayar: <Settings {...ctx} saveSet={saveSet} lang={lang} setL={setL} />, isler: <Jobs {...ctx} />, gorev: <Mine {...ctx} />, ekip: <Team {...ctx} />, tara: <ScanPage lang={lang} stageNames={settings.stage_names} onClose={() => setPage('dash')} />,
     randevu: <Crud title="Randevular" table="appointments" sel="*, doctors(full_name)" order={['starts_at', true]} add="Yeni randevu"
       cols={[{ label:'Başlık', k:'title' }, { label:'Tarih', r: r => fmt(r.starts_at) }, { label:'Doktor', r: r => r.doctors?.full_name || '—' }, { k:'notes', label:'Not' }]}
       fields={[{ k:'title', label:'Başlık', required:true, w:1 }, { k:'starts_at', label:'Tarih / saat', type:'datetime-local', required:true }, { k:'doctor_id', label:'Doktor', type:'select', from:['doctors','id','full_name'] }, { k:'notes', label:'Not', type:'textarea', w:1 }]} />,
@@ -274,7 +280,7 @@ function Dash({ cases, name, me }) {
       <Stat label="Bu ay teslim edilen" value={cases.filter(c => c.delivered_at?.startsWith(month)).length} c="#16a34a" />
     </div>
     <div className="cols">
-      <div className="panel"><h3>Aşamalara göre işler</h3><Bars data={count(active, s => ST[s.stage])} /></div>
+      <div className="panel"><h3>Aşamalara göre işler</h3><Bars data={count(active, s => stg(s.stage))} /></div>
       <div className="panel"><h3>İş türü dağılımı</h3><Bars data={count(open, c => c.work_type)} /></div>
       <div className="panel"><h3>Personel yükü</h3><Bars data={count(active, s => s.assigned_to ? name(s.assigned_to) : 'Atanmamış')} /></div>
     </div>
@@ -283,7 +289,7 @@ function Dash({ cases, name, me }) {
   </>
 }
 
-const Steps = ({ c }) => <div className="steps">{stages(c).map(s => <i key={s.id} className={s.status} title={ST[s.stage]} />)}</div>
+const Steps = ({ c }) => <div className="steps">{stages(c).map(s => <i key={s.id} className={s.status} title={stg(s.stage)} />)}</div>
 
 function Jobs({ cases, staff, name, load, user }) {
   const [q, setQ] = useState(''), [fs, setFs] = useState('open'), [sel, setSel] = useState(null), [nw, setNw] = useState(false)
@@ -307,13 +313,13 @@ function Jobs({ cases, staff, name, load, user }) {
     <div className="tw"><table className="jobs"><thead><tr><th>No</th><th>Hasta</th><th>Doktor</th><th>İş</th><th>İlerleme</th><th>Sorumlu</th><th>Teslim</th></tr></thead>
       <tbody>{list.map(c => { const cs = stages(c).find(s => s.status === 'devam')
         return <tr key={c.id} className="clk" onClick={() => setSel(c.id)}><td>#{c.case_no}</td><td>{c.patients?.full_name}</td><td>{c.doctors?.full_name}</td><td><span className="pill">{c.work_type}</span></td>
-          <td><Steps c={c} /><small>{ST[c.current_stage]}</small></td><td>{name(cs?.assigned_to)}</td><td>{c.due_date || '—'} {late(c) && !c.deleted_at && <span className="pill r">Gecikti</span>}</td></tr> })}</tbody></table>
+          <td><Steps c={c} /><small>{stg(c.current_stage)}</small></td><td>{name(cs?.assigned_to)}</td><td>{c.due_date || '—'} {late(c) && !c.deleted_at && <span className="pill r">Gecikti</span>}</td></tr> })}</tbody></table>
       {!list.length && <p className="empty">İş bulunamadı</p>}</div>
     {cur && <Modal title={`#${cur.case_no} · ${cur.patients?.full_name}`} onClose={() => setSel(null)}>
       <p className="muted">Dr. {cur.doctors?.full_name} · {cur.work_type} · Diş: {cur.tooth_numbers || '—'} · Renk: {cur.shade || '—'} · Teslim: {cur.due_date || '—'}</p>
       {cur.deleted_at && <p><span className="pill y">Bu iş arşivde</span> <small>{fmt(cur.deleted_at)}</small></p>}
       {cur.notes && <p>{cur.notes}</p>}
-      {stages(cur).map(s => <div key={s.id} className={'tlr ' + s.status}><span className="dot" /><b>{ST[s.stage]}</b>
+      {stages(cur).map(s => <div key={s.id} className={'tlr ' + s.status}><span className="dot" /><b>{stg(s.stage)}</b>
         <select value={s.assigned_to || ''} disabled={s.status === 'bitti' || !!cur.deleted_at} onChange={e => assign(s.id, e.target.value)}><option value="">— atanmadı —</option>{staff.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}</select>
         {s.status === 'devam' && !cur.deleted_at ? <button className="btn btn-ok" onClick={() => finish(s.id)}>✔ Bitir</button> : <small>{s.finished_at ? fmt(s.finished_at) : ''}</small>}</div>)}
       <Files cid={cur.id} user={user} name={name} /><br /><CaseQR no={cur.case_no} /><button className="btn btn-g" onClick={() => printCaseLabel({ case_no: cur.case_no, patient: cur.patients?.full_name, doctor: cur.doctors?.full_name, work_type: cur.work_type, tooth_numbers: cur.tooth_numbers, due_date: cur.due_date })}>🏷 Etiket yazdır</button> {cur.deleted_at ? <button className="btn btn-ok" onClick={restore}>♻ Geri yükle</button> : <button className="btn btn-g" onClick={archive}>🗄 Arşivle</button>}</Modal>}
@@ -351,7 +357,7 @@ function Mine({ cases, user, load }) {
   const mine = cases.flatMap(c => stages(c).filter(s => s.assigned_to === user.id && s.status === 'devam').map(s => ({ c, s })))
   const finish = async id => { const { error } = await sb.from('case_stages').update({ status:'bitti' }).eq('id', id); if (error) alert(error.message); load() }
   return <div className="cols">{mine.map(({ c, s }) => <div key={s.id} className="panel" style={late(c) ? { borderLeft:'5px solid var(--bad)' } : {}}>
-    <b>#{c.case_no}</b> <span className="pill">{ST[s.stage]}</span><h3 style={{ marginTop:8 }}>{c.patients?.full_name} · {c.work_type}</h3>
+    <b>#{c.case_no}</b> <span className="pill">{stg(s.stage)}</span><h3 style={{ marginTop:8 }}>{c.patients?.full_name} · {c.work_type}</h3>
     <p className="muted">Diş: {c.tooth_numbers || '—'} · Renk: {c.shade || '—'} · Teslim: {c.due_date || '—'}</p><p>{c.notes}</p>
     <button className="btn btn-ok" onClick={() => finish(s.id)}>✔ Bitir</button></div>)}
     {!mine.length && <div className="panel empty">Sana atanmış devam eden iş yok 👍</div>}</div>
@@ -426,7 +432,7 @@ function Team({ cases, staff, me, load }) {
   return <div className="cols">{staff.map(p => { const w = active.filter(a => a.s.assigned_to === p.id)
     return <div className="panel" key={p.id}><div className="ph"><div className="av">{p.full_name[0].toUpperCase()}</div><h3>{p.full_name}</h3><span className={'pill ' + (w.length ? 'y' : 'g')}>{w.length ? w.length + ' iş' : 'Boşta'}</span></div>
       {me?.role === 'admin' ? <select value={p.role} onChange={e => role(p.id, e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{rn(r)}</option>)}</select> : <span className="pill">{rn(p.role)}</span>}
-      {w.map(({ c, s }) => <p key={s.id}><small>#{c.case_no} · {ST[s.stage]} · {c.work_type}</small></p>)}</div> })}</div>
+      {w.map(({ c, s }) => <p key={s.id}><small>#{c.case_no} · {stg(s.stage)} · {c.work_type}</small></p>)}</div> })}</div>
 }
 
 function Modal({ title, onClose, children }) {
@@ -559,6 +565,15 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
   const isA = me?.role === 'admin', rp = { ...DEF, ...(settings.role_pages || {}) }
   const PAGES = NAV.filter(n => !['dash', 'ayar', 'tara'].includes(n[0]))
   const [lab, setLab] = useState(settings.lab_name || 'Goodent'), [nm, setNm] = useState(me?.full_name || ''), [pw, setPw] = useState(''), [rnm, setRnm] = useState(Object.fromEntries(ROLES.map(r => [r, rn(r)])))
+  const stOv = settings.stage_names || {}
+  const [snm, setSnm] = useState(Object.fromEntries(STAGE_CODES.map(k => [k, stOv[lang]?.[k] || ''])))
+  useEffect(() => { setSnm(Object.fromEntries(STAGE_CODES.map(k => [k, (settings.stage_names || {})[lang]?.[k] || '']))) }, [lang, settings.stage_names])
+  async function saveStages(reset) {
+    const clean = reset ? {} : Object.fromEntries(STAGE_CODES.map(k => [k, (snm[k] || '').trim()]).filter(([k, v]) => v && v !== STAGE_DEF[lang][k]))
+    const names = STAGE_CODES.map(k => (clean[k] || STAGE_DEF[lang][k]).toLocaleLowerCase(lang))
+    if (new Set(names).size !== names.length) return alert('Aynı ada sahip iki aşama olamaz.')
+    saveSet('stage_names', { ...stOv, [lang]: clean })
+  }
   useEffect(() => { setRnm(Object.fromEntries(ROLES.map(r => [r, rn(r)]))) }, [lang, settings.role_names])
   const lock = (r, p) => ['cari', 'kasa'].includes(p) && r !== 'accountant'
   const setRole = (r, p) => { const c = rp[r] || []; saveSet('role_pages', { ...rp, [r]: c.includes(p) ? c.filter(x => x !== p) : [...c, p] }) }
@@ -580,6 +595,10 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
       <button className="btn btn-p" onClick={() => saveSet('lab_name', lab)}>Kaydet</button>
       <h3 style={{ marginTop:18 }}>Yedek</h3><button className="btn btn-g" onClick={backup}>Yedek indir (JSON)</button></div>}
     {isA && <div className="panel"><h3>Rol adları</h3><div className="fg">{ROLES.map(r => <label key={r}>{ROLE_DEF[lang][r]}<input value={rnm[r] ?? ''} onChange={e => setRnm({ ...rnm, [r]: e.target.value })} /></label>)}</div><button className="btn btn-p" onClick={() => saveSet('role_names', { ...RN, [lang]: rnm })}>Kaydet</button></div>}
+    {isA && <div className="panel"><h3>Aşama adları</h3>
+      <p className="muted">İş penceresinde, listelerde ve barkod ekranında görünen aşama adları. Sıra ve aşama sayısı sabittir; yalnızca görünen ad değişir. Boş bırakılan alan varsayılan adı kullanır. Adlar seçili dil için kaydedilir.</p>
+      <div className="fg">{STAGE_CODES.map((k, i) => <label key={k}>{i + 1}. {STAGE_DEF[lang][k]}<input maxLength={STAGE_NAME_MAX} placeholder={STAGE_DEF[lang][k]} value={snm[k] ?? ''} onChange={e => setSnm({ ...snm, [k]: e.target.value })} /></label>)}</div>
+      <button className="btn btn-p" onClick={() => saveStages(false)}>Kaydet</button>{' '}<button className="btn btn-g" onClick={() => confirm('Aşama adları varsayılana dönsün mü?') && saveStages(true)}>Varsayılana dön</button></div>}
     {isA && <div className="panel" style={{ gridColumn:'1/-1' }}><h3>Yetkiler</h3>
       <p className="muted">Hangi rol hangi sayfayı görebilir. Kasa ve Cari sadece admin ile muhasebe rolüne açılabilir.</p>
       <div className="tw"><table><thead><tr><th>Rol</th>{PAGES.map(p => <th key={p[0]}>{p[2]}</th>)}</tr></thead>
