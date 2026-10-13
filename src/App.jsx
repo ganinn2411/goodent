@@ -55,6 +55,8 @@ const money = n => Number(n || 0).toLocaleString('tr-TR', { minimumFractionDigit
 const stages = c => [...(c.case_stages || [])].sort((a, b) => a.seq - b.seq)
 const done = c => ['teslim_edildi','iptal'].includes(c.status)
 const late = c => c.due_date && !done(c) && c.due_date < today()
+// Eklenme zamanına göre yeniden eskiye (aynı anda eklenenlerde büyük iş no önce)
+const byNew = (a, b) => (new Date(b.received_at || b.created_at) - new Date(a.received_at || a.created_at)) || (b.case_no - a.case_no)
 
 const loc = d => { const x = new Date(d); return new Date(x - x.getTimezoneOffset() * 6e4).toISOString().slice(0, 16) }
 const AR = {
@@ -71,7 +73,7 @@ const AR = {
 'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam, giriş yapabilirsin.':'تم التسجيل، يمكنك الدخول.',
 'Şifremi unuttum':'نسيت كلمة المرور','Sıfırlama bağlantısını gönder':'إرسال رابط إعادة التعيين','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'اكتب بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'تم إرسال الرابط إلى بريدك الإلكتروني. تحقق من صندوق الوارد (والرسائل غير المرغوبة).','Yeni şifre belirle':'تعيين كلمة مرور جديدة','Yeni şifre (tekrar)':'كلمة المرور الجديدة (تكرار)','Şifreyi kaydet':'حفظ كلمة المرور','Şifre en az 6 karakter olmalı':'يجب ألا تقل كلمة المرور عن 6 أحرف','Şifreler aynı değil':'كلمتا المرور غير متطابقتين','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'تم تغيير كلمة المرور. جارٍ تحويلك إلى شاشة الدخول…','Şifre değişti. Yeni şifrenle giriş yap.':'تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.',
 'Açık işler':'الأعمال المفتوحة','Geciken işler':'الأعمال المتأخرة','Bugün teslim':'تسليم اليوم','Bu ay teslim edilen':'المسلَّم هذا الشهر','Aşamalara göre işler':'الأعمال حسب المرحلة','İş türü dağılımı':'توزيع أنواع العمل','Personel yükü':'عبء الموظفين','Bugün teslim / geciken':'تسليم اليوم / المتأخر','Gecikti':'متأخر','Bugün':'اليوم','Veri yok':'لا توجد بيانات','Atanmamış':'غير معيّن','Bugün teslim veya geciken iş yok 🎉':'لا توجد أعمال متأخرة أو تسلَّم اليوم 🎉',
-'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد',
+'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','Eklenme':'تاريخ الإضافة','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد',
 '— yeni doktor —':'— طبيب جديد —','Yeni doktor adı':'اسم الطبيب الجديد','Hasta adı':'اسم المريض','İş türü':'نوع العمل','Diş numaraları':'أرقام الأسنان','Renk':'اللون','Teslim tarihi':'تاريخ التسليم','Not':'ملاحظة','Kaydet':'حفظ','Fiyat (TL)':'السعر (TL)',
 'Sana atanmış devam eden iş yok 👍':'لا توجد أعمال معيّنة لك 👍','Boşta':'متفرغ','Ara…':'بحث…','Kayıt yok':'لا توجد سجلات','Düzenle':'تعديل','Kayıt silinsin mi? (Veri tamamen silinmez, arşivlenir)':'حذف السجل؟',
 'Yeni randevu':'موعد جديد','Başlık':'العنوان','Tarih':'التاريخ','Tarih / saat':'التاريخ / الوقت',
@@ -94,7 +96,7 @@ const EN = {
 'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam, giriş yapabilirsin.':'Registered, you can sign in now.',
 'Şifremi unuttum':'Forgot password','Sıfırlama bağlantısını gönder':'Send reset link','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'Enter your email and we will send you a password reset link.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'Link sent to your email. Check your inbox (and spam folder).','Yeni şifre belirle':'Set a new password','Yeni şifre (tekrar)':'New password (repeat)','Şifreyi kaydet':'Save password','Şifre en az 6 karakter olmalı':'Password must be at least 6 characters','Şifreler aynı değil':'Passwords do not match','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'Password changed. Redirecting to sign in…','Şifre değişti. Yeni şifrenle giriş yap.':'Password changed. Sign in with your new password.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'The link is invalid or expired. Request a new one.',
 'Açık işler':'Open jobs','Geciken işler':'Late jobs','Bugün teslim':'Due today','Bu ay teslim edilen':'Delivered this month','Aşamalara göre işler':'Jobs by stage','İş türü dağılımı':'Job type distribution','Personel yükü':'Staff workload','Bugün teslim / geciken':'Due today / late','Gecikti':'Late','Bugün':'Today','Veri yok':'No data','Atanmamış':'Unassigned','Bugün teslim veya geciken iş yok 🎉':'Nothing due today or late 🎉',
-'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake',
+'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','Eklenme':'Added','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake',
 '— yeni doktor —':'— new doctor —','Yeni doktor adı':'New doctor name','Hasta adı':'Patient name','İş türü':'Job type','Diş numaraları':'Tooth numbers','Renk':'Shade','Teslim tarihi':'Due date','Not':'Note','Kaydet':'Save','Fiyat (TL)':'Price (TL)',
 'Sana atanmış devam eden iş yok 👍':'No active jobs assigned to you 👍','Boşta':'Idle','Ara…':'Search…','Kayıt yok':'No records','Düzenle':'Edit',
 'Yeni randevu':'New appointment','Başlık':'Title','Tarih':'Date','Tarih / saat':'Date / time',
@@ -308,7 +310,7 @@ function Jobs({ cases, staff, name, load, user }) {
     sb.from('cases').select('*, patients(full_name), doctors(full_name), case_stages(*)').not('deleted_at', 'is', null).order('deleted_at', { ascending: false }).then(r => setArch(r.data || []))
   }, [fs, av])
   const list = (fs === 'arsiv' ? arch : cases).filter(c => (fs === 'all' || fs === 'arsiv' || (fs === 'open' ? !done(c) : c.status === fs)) &&
-    `${c.case_no} ${c.patients?.full_name} ${c.doctors?.full_name} ${c.work_type}`.toLowerCase().includes(q.toLowerCase()))
+    `${c.case_no} ${c.patients?.full_name} ${c.doctors?.full_name} ${c.work_type}`.toLowerCase().includes(q.toLowerCase())).sort(byNew)
   const cur = (fs === 'arsiv' ? arch : cases).find(c => c.id === sel)
   const assign = async (id, u) => { const { error } = await sb.from('case_stages').update({ assigned_to: u || null }).eq('id', id); if (error) alert(error.message); load() }
   const finish = async id => { const { error } = await sb.from('case_stages').update({ status:'bitti' }).eq('id', id); if (error) alert(error.message); load() }
@@ -319,10 +321,10 @@ function Jobs({ cases, staff, name, load, user }) {
       <input className="srch" placeholder="Ara: hasta, doktor, no…" value={q} onChange={e => setQ(e.target.value)} />
       <select style={{ width:'auto' }} value={fs} onChange={e => setFs(e.target.value)}><option value="open">Açık işler</option><option value="all">Hepsi</option><option value="arsiv">🗄 Arşiv</option>{Object.entries(CS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
       <button className="btn btn-p" onClick={() => setNw(true)}>＋ Yeni iş</button></div>
-    <div className="tw"><table className="jobs"><thead><tr><th>No</th><th>Hasta</th><th>Doktor</th><th>İş</th><th>İlerleme</th><th>Sorumlu</th><th>Teslim</th></tr></thead>
+    <div className="tw"><table className="jobs"><thead><tr><th>No</th><th>Hasta</th><th>Doktor</th><th>İş</th><th>İlerleme</th><th>Sorumlu</th><th>Teslim</th><th>Eklenme</th></tr></thead>
       <tbody>{list.map(c => { const cs = stages(c).find(s => s.status === 'devam')
         return <tr key={c.id} className="clk" onClick={() => setSel(c.id)}><td>#{c.case_no}</td><td>{c.patients?.full_name}</td><td>{c.doctors?.full_name}</td><td><span className="pill">{c.work_type}</span></td>
-          <td><Steps c={c} /><small>{stg(c.current_stage)}</small></td><td>{name(cs?.assigned_to)}</td><td>{c.due_date || '—'} {late(c) && !c.deleted_at && <span className="pill r">Gecikti</span>}</td></tr> })}</tbody></table>
+          <td><Steps c={c} /><small>{stg(c.current_stage)}</small></td><td>{name(cs?.assigned_to)}</td><td>{c.due_date || '—'} {late(c) && !c.deleted_at && <span className="pill r">Gecikti</span>}</td><td style={{ whiteSpace: 'nowrap' }}><small>{fmt(c.received_at || c.created_at)}</small></td></tr> })}</tbody></table>
       {!list.length && <p className="empty">İş bulunamadı</p>}</div>
     {cur && <Modal title={`#${cur.case_no} · ${cur.patients?.full_name}`} onClose={() => setSel(null)}>
       <p className="muted">Dr. {cur.doctors?.full_name} · {cur.work_type} · Diş: {cur.tooth_numbers || '—'} · Renk: {cur.shade || '—'} · Teslim: {cur.due_date || '—'}</p>
