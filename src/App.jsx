@@ -26,6 +26,14 @@ const siteUrl = () => {
   return (e || (/^https?:$/.test(location.protocol) ? location.origin + location.pathname.replace(/\/[^/]*$/, '') : '')) + '/'
 }
 
+// Tema: koyu / açık. Seçim localStorage'da saklanır; index.html açılışta aynı değeri uygular (titreme olmasın).
+const getTheme = () => (localStorage.getItem('theme') === 'light' ? 'light' : 'dark')
+const applyTheme = t => {
+  document.documentElement.dataset.theme = t
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', t === 'light' ? '#eef3fb' : '#0b1226')
+}
+applyTheme(getTheme())
+
 // Aşama adı: yöneticinin Ayarlar'da girdiği özel ad (SN) -> yoksa dilin varsayılanı. Bkz. stages.js
 let SN = {}
 const stg = k => stageLabel(k, LANG, SN)
@@ -166,7 +174,7 @@ function Login({ lang, setL, notice }) {
   }
   const tab = u => { setUp(u); setFg(false); setMsg('') }
   return <div className="auth">
-    <div className="auth-lang"><LangPick lang={lang} setL={setL} /></div>
+    <div className="auth-lang"><ThemePick /><LangPick lang={lang} setL={setL} /></div>
     <div className="auth-hero"><Tooth3D /><h1>Goodent</h1><p>Dental Laboratuvar Yönetimi</p></div>
     <form className="auth-card" onSubmit={go}>
       {!fg && <div className="auth-tabs"><button type="button" className={up ? '' : 'on'} onClick={() => tab(false)}>Giriş</button><button type="button" className={up ? 'on' : ''} onClick={() => tab(true)}>Yeni hesap</button></div>}
@@ -199,7 +207,7 @@ function Recovery({ lang, setL, hasSession, onDone }) {
     setTimeout(() => onDone('Şifre değişti. Yeni şifrenle giriş yap.'), 1200)
   }
   return <div className="auth">
-    <div className="auth-lang"><LangPick lang={lang} setL={setL} /></div>
+    <div className="auth-lang"><ThemePick /><LangPick lang={lang} setL={setL} /></div>
     <div className="auth-hero"><Tooth3D /><h1>Goodent</h1><p>Dental Laboratuvar Yönetimi</p></div>
     {hasSession ? <form className="auth-card" onSubmit={go}>
       <h3 style={{ margin: 0, textAlign: 'center' }}>Yeni şifre belirle</h3>
@@ -256,7 +264,7 @@ function Shell({ user, lang, setL }) {
     </aside>
     <div className="main">
       <div className="top"><button className="burger" onClick={() => setMenu(!menu)}>☰</button><h2>{NAV.find(n => n[0] === cur)[2]}</h2>
-        <div className="user"><LangPick lang={lang} setL={setL} /><span className="uname">{me?.full_name}</span><div className="av">{(me?.full_name || '?')[0].toUpperCase()}</div></div></div>
+        <div className="user"><ThemePick /><LangPick lang={lang} setL={setL} /><span className="uname">{me?.full_name}</span><div className="av">{(me?.full_name || '?')[0].toUpperCase()}</div></div></div>
       <div className="page" key={cur}>{pages[cur]}</div>
     </div></div>
 }
@@ -690,6 +698,15 @@ function Invoice({ rows, acc, from, to, lab, onClose }) {
       {cur.map(c => <div className="inv-t" key={c}>{['satis_faturasi', 'tahsilat', 'alis_faturasi', 'odeme', 'gider'].filter(t => sum(c, t)).map(t => <div key={t}>{TX[t]}: {money(sum(c, t))} {c}</div>)}<b>Bakiye ({c}): {money(bal(c))}</b></div>)}
     </div>
     <br /><button className="btn btn-p" onClick={() => window.print()}>🖨 Yazdır / PDF</button></Modal>
+}
+
+function ThemePick() {
+  const [t, setT] = useState(getTheme)
+  const pick = v => { localStorage.setItem('theme', v); applyTheme(v); setT(v) }
+  return <div className="theme" role="group" aria-label="Tema">
+    <button type="button" className={t === 'dark' ? 'on' : ''} aria-pressed={t === 'dark'} aria-label="Koyu" title="Koyu" onClick={() => pick('dark')}>🌙</button>
+    <button type="button" className={t === 'light' ? 'on' : ''} aria-pressed={t === 'light'} aria-label="Açık" title="Açık" onClick={() => pick('light')}>☀️</button>
+  </div>
 }
 
 function LangPick({ lang, setL }) {
