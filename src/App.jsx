@@ -1,4 +1,5 @@
 import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react'
+import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { supabase as sb } from './supabase'
@@ -436,7 +437,9 @@ function Team({ cases, staff, me, load }) {
 }
 
 function Modal({ title, onClose, children }) {
-  return <div className="ov" onMouseDown={e => e.target === e.currentTarget && onClose()}><div className="modal"><div className="mh"><h3>{title}</h3><button className="x" onClick={onClose}>✕</button></div>{children}</div></div>
+  // Pencere doğrudan body'ye çizilir: backdrop-filter'lı .panel içinde kalırsa position:fixed paneli baz alır ve ekran dışına taşar.
+  useEffect(() => { document.body.classList.add('noscroll'); return () => document.body.classList.remove('noscroll') }, [])
+  return createPortal(<div className="ov" onMouseDown={e => e.target === e.currentTarget && onClose()}><div className="modal"><div className="mh"><h3>{title}</h3><button className="x" onClick={onClose}>✕</button></div>{children}</div></div>, document.body)
 }
 
 function Crud({ title, table, view, sel = '*', soft = true, order, cols, fields, extra, top, filter, add = 'Yeni ekle' }) {
