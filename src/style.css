@@ -216,6 +216,7 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
   backdrop-filter:blur(26px) saturate(150%);-webkit-backdrop-filter:blur(26px) saturate(150%);
   box-shadow:0 40px 80px -30px #000,0 1px 0 rgba(255,255,255,.1) inset;
 }
+.modal{overscroll-behavior:contain;-webkit-overflow-scrolling:touch}
 .mh{display:flex;justify-content:space-between;align-items:center;margin-bottom:14px}
 .mh h3{margin:0;letter-spacing:-.01em}
 .x{border:1px solid var(--line);background:var(--glass-2);color:var(--ink);border-radius:10px;width:34px;height:34px;cursor:pointer}
@@ -383,9 +384,8 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
 @media print{
   html,body{background:#fff!important;color:#000!important}
   .side,.top,.mh,.modal .btn,.scrim{display:none!important}
-  .app{display:block}
+  .app{display:none!important}
   .page{padding:0}
-  .page>*:not(.ov){display:none!important}
   .ov{position:static;background:none!important;backdrop-filter:none;display:block;padding:0}
   .modal{
     width:100%;max-height:none;overflow:visible;padding:0;border:0!important;
