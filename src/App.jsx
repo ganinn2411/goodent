@@ -36,6 +36,10 @@ applyTheme(getTheme())
 
 // Aşama adı: yöneticinin Ayarlar'da girdiği özel ad (SN) -> yoksa dilin varsayılanı. Bkz. stages.js
 let SN = {}
+// Yan menü adları / simgeleri: yöneticinin Ayarlar > "Menü adları" bölümünde girdiği özel değerler (yoksa varsayılan)
+let MN = {}, MI = {}
+const navL = (k, d) => ((MN[LANG] || {})[k] || '').trim() || d
+const navI = (k, d) => (MI[k] || '').trim() || d
 const stg = k => stageLabel(k, LANG, SN)
 const CS = { acik:'Açık', laboratuvarda:'Laboratuvarda', provada:'Provada', teslim_edildi:'Teslim edildi', iptal:'İptal' }
 const TX = { satis_faturasi:'Satış faturası', alis_faturasi:'Alış faturası', tahsilat:'Tahsilat', odeme:'Ödeme', gider:'Gider' }
@@ -110,7 +114,7 @@ const AR = {
 'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam, giriş yapabilirsin.':'تم التسجيل، يمكنك الدخول.',
 'Şifremi unuttum':'نسيت كلمة المرور','Sıfırlama bağlantısını gönder':'إرسال رابط إعادة التعيين','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'اكتب بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'تم إرسال الرابط إلى بريدك الإلكتروني. تحقق من صندوق الوارد (والرسائل غير المرغوبة).','Yeni şifre belirle':'تعيين كلمة مرور جديدة','Yeni şifre (tekrar)':'كلمة المرور الجديدة (تكرار)','Şifreyi kaydet':'حفظ كلمة المرور','Şifre en az 6 karakter olmalı':'يجب ألا تقل كلمة المرور عن 6 أحرف','Şifreler aynı değil':'كلمتا المرور غير متطابقتين','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'تم تغيير كلمة المرور. جارٍ تحويلك إلى شاشة الدخول…','Şifre değişti. Yeni şifrenle giriş yap.':'تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.',
 'Açık işler':'الأعمال المفتوحة','Geciken işler':'الأعمال المتأخرة','Bugün teslim':'تسليم اليوم','Bu ay teslim edilen':'المسلَّم هذا الشهر','Aşamalara göre işler':'الأعمال حسب المرحلة','İş türü dağılımı':'توزيع أنواع العمل','Personel yükü':'عبء الموظفين','Bugün teslim / geciken':'تسليم اليوم / المتأخر','Gecikti':'متأخر','Bugün':'اليوم','Veri yok':'لا توجد بيانات','Atanmamış':'غير معيّن','Bugün teslim veya geciken iş yok 🎉':'لا توجد أعمال متأخرة أو تسلَّم اليوم 🎉',
-'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','Eklenme':'تاريخ الإضافة','✏ Düzenle':'✏ تعديل','🗑 Sil':'🗑 حذف','İşi düzenle':'تعديل العمل','Vazgeç':'إلغاء','Tamam':'موافق','🗑 Evet, sil':'🗑 نعم، احذف','İşi sil':'حذف العمل','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'سيتم حذف هذا العمل بمراحله وملفاته نهائيًا. لا يمكن التراجع عن هذا الإجراء.','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد',
+'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','Eklenme':'تاريخ الإضافة','Çıkış':'خروج','Menü adları':'أسماء القائمة','Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.':'الأسماء والرموز الظاهرة في القائمة اليسرى. تُحفظ الأسماء للغة المختارة والرموز لجميع اللغات. الحقل الفارغ يستخدم الاسم الافتراضي. يمكنك كتابة أي إيموجي للرمز.','✏ Düzenle':'✏ تعديل','🗑 Sil':'🗑 حذف','İşi düzenle':'تعديل العمل','Vazgeç':'إلغاء','Tamam':'موافق','🗑 Evet, sil':'🗑 نعم، احذف','İşi sil':'حذف العمل','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'سيتم حذف هذا العمل بمراحله وملفاته نهائيًا. لا يمكن التراجع عن هذا الإجراء.','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد',
 '— yeni doktor —':'— طبيب جديد —','Yeni doktor adı':'اسم الطبيب الجديد','Hasta adı':'اسم المريض','İş türü':'نوع العمل','Diş numaraları':'أرقام الأسنان','Renk':'اللون','Teslim tarihi':'تاريخ التسليم','Not':'ملاحظة','Kaydet':'حفظ','Fiyat (TL)':'السعر (TL)',
 'Sana atanmış devam eden iş yok 👍':'لا توجد أعمال معيّنة لك 👍','Boşta':'متفرغ','Ara…':'بحث…','Kayıt yok':'لا توجد سجلات','Düzenle':'تعديل','Kayıt silinsin mi? (Veri tamamen silinmez, arşivlenir)':'حذف السجل؟',
 'Yeni randevu':'موعد جديد','Başlık':'العنوان','Tarih':'التاريخ','Tarih / saat':'التاريخ / الوقت',
@@ -133,7 +137,7 @@ const EN = {
 'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam, giriş yapabilirsin.':'Registered, you can sign in now.',
 'Şifremi unuttum':'Forgot password','Sıfırlama bağlantısını gönder':'Send reset link','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'Enter your email and we will send you a password reset link.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'Link sent to your email. Check your inbox (and spam folder).','Yeni şifre belirle':'Set a new password','Yeni şifre (tekrar)':'New password (repeat)','Şifreyi kaydet':'Save password','Şifre en az 6 karakter olmalı':'Password must be at least 6 characters','Şifreler aynı değil':'Passwords do not match','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'Password changed. Redirecting to sign in…','Şifre değişti. Yeni şifrenle giriş yap.':'Password changed. Sign in with your new password.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'The link is invalid or expired. Request a new one.',
 'Açık işler':'Open jobs','Geciken işler':'Late jobs','Bugün teslim':'Due today','Bu ay teslim edilen':'Delivered this month','Aşamalara göre işler':'Jobs by stage','İş türü dağılımı':'Job type distribution','Personel yükü':'Staff workload','Bugün teslim / geciken':'Due today / late','Gecikti':'Late','Bugün':'Today','Veri yok':'No data','Atanmamış':'Unassigned','Bugün teslim veya geciken iş yok 🎉':'Nothing due today or late 🎉',
-'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','Eklenme':'Added','✏ Düzenle':'✏ Edit','🗑 Sil':'🗑 Delete','İşi düzenle':'Edit job','Vazgeç':'Cancel','Tamam':'OK','🗑 Evet, sil':'🗑 Yes, delete','İşi sil':'Delete job','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'This job will be PERMANENTLY deleted together with its stages and files. This cannot be undone.','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake',
+'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','Eklenme':'Added','Çıkış':'Sign out','Menü adları':'Menu names','Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.':'Names and icons shown in the left menu. Names are saved for the selected language, icons for all languages. Empty fields use the default. You can type any emoji as an icon.','✏ Düzenle':'✏ Edit','🗑 Sil':'🗑 Delete','İşi düzenle':'Edit job','Vazgeç':'Cancel','Tamam':'OK','🗑 Evet, sil':'🗑 Yes, delete','İşi sil':'Delete job','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'This job will be PERMANENTLY deleted together with its stages and files. This cannot be undone.','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake',
 '— yeni doktor —':'— new doctor —','Yeni doktor adı':'New doctor name','Hasta adı':'Patient name','İş türü':'Job type','Diş numaraları':'Tooth numbers','Renk':'Shade','Teslim tarihi':'Due date','Not':'Note','Kaydet':'Save','Fiyat (TL)':'Price (TL)',
 'Sana atanmış devam eden iş yok 👍':'No active jobs assigned to you 👍','Boşta':'Idle','Ara…':'Search…','Kayıt yok':'No records','Düzenle':'Edit',
 'Yeni randevu':'New appointment','Başlık':'Title','Tarih':'Date','Tarih / saat':'Date / time',
@@ -277,7 +281,7 @@ function Shell({ user, lang, setL }) {
   useEffect(() => { document.body.classList.toggle('noscroll', menu); return () => document.body.classList.remove('noscroll') }, [menu])
   const name = id => staff.find(s => s.id === id)?.full_name || '—'
   const rnRaw = settings.role_names || {}; RN = ROLES.some(k => k in rnRaw) ? { tr: rnRaw } : rnRaw; LANG = lang
-  SN = settings.stage_names || {}
+  SN = settings.stage_names || {}; MN = settings.menu_names || {}; MI = settings.menu_icons || {}
   const role = me?.role, rp = { ...DEF, ...(settings.role_pages || {}) }
   const ok = p => p === 'dash' || p === 'tara' || role === 'admin' || (p !== 'ayar' && (!['cari', 'kasa'].includes(p) || role === 'accountant') && (rp[role] || []).includes(p))
   const cur = ok(page) ? page : 'dash'
@@ -300,11 +304,11 @@ function Shell({ user, lang, setL }) {
     {menu && <div className="scrim" onClick={() => setMenu(false)} />}
     <aside className={'side ' + (menu ? 'open' : '')}>
       <div className="logo"><i>🦷</i>{settings.lab_name || 'Goodent'}</div>
-      {NAV.filter(n => ok(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setJf(null); setMenu(false) }}>{ic} {l}</button>)}
-      <div className="sp" /><button onClick={() => sb.auth.signOut()}>🚪 Çıkış</button>
+      {NAV.filter(n => ok(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setJf(null); setMenu(false) }}>{navI(k, ic)} {navL(k, l)}</button>)}
+      <div className="sp" /><button onClick={() => sb.auth.signOut()}>{navI('out', '🚪')} {navL('out', 'Çıkış')}</button>
     </aside>
     <div className="main">
-      <div className="top"><button className="burger" onClick={() => setMenu(!menu)}>☰</button><h2>{NAV.find(n => n[0] === cur)[2]}</h2>
+      <div className="top"><button className="burger" onClick={() => setMenu(!menu)}>☰</button><h2>{navL(cur, NAV.find(n => n[0] === cur)[2])}</h2>
         <div className="user"><ThemePick /><LangPick lang={lang} setL={setL} /><span className="uname">{me?.full_name}</span><div className="av">{(me?.full_name || '?')[0].toUpperCase()}</div></div></div>
       <div className="page" key={cur}>{pages[cur]}</div>
     </div></div>
@@ -676,6 +680,19 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
     saveSet('stage_names', { ...stOv, [lang]: clean })
   }
   useEffect(() => { setRnm(Object.fromEntries(ROLES.map(r => [r, rn(r)]))) }, [lang, settings.role_names])
+  // ---- Menü adları / simgeleri ----
+  const menuItems = [...NAV, ['out', '🚪', 'Çıkış']]
+  const [mnm, setMnm] = useState({}), [mic, setMic] = useState({})
+  useEffect(() => {
+    setMnm(Object.fromEntries(menuItems.map(([k]) => [k, (settings.menu_names || {})[lang]?.[k] || ''])))
+    setMic(Object.fromEntries(menuItems.map(([k]) => [k, (settings.menu_icons || {})[k] || ''])))
+  }, [lang, settings.menu_names, settings.menu_icons])
+  async function saveMenu(reset) {
+    const names = reset ? {} : Object.fromEntries(menuItems.map(([k, , d]) => [k, (mnm[k] || '').trim()]).filter(([k, v]) => v && v !== d))
+    const icons = reset ? {} : Object.fromEntries(menuItems.map(([k, i]) => [k, (mic[k] || '').trim()]).filter(([k, v]) => v && v !== i))
+    await saveSet('menu_names', { ...(settings.menu_names || {}), [lang]: names })
+    await saveSet('menu_icons', icons)
+  }
   const lock = (r, p) => ['cari', 'kasa'].includes(p) && r !== 'accountant'
   const setRole = (r, p) => { const c = rp[r] || []; saveSet('role_pages', { ...rp, [r]: c.includes(p) ? c.filter(x => x !== p) : [...c, p] }) }
   async function changePw() { if (pw.length < 6) return notify('Şifre en az 6 karakter olmalı'); const { error } = await sb.auth.updateUser({ password: pw }); notify(error ? error.message : 'Şifre değişti'); setPw('') }
@@ -696,13 +713,19 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
       <button className="btn btn-p" onClick={() => saveSet('lab_name', lab)}>Kaydet</button>
       <h3 style={{ marginTop:18 }}>Yedek</h3><button className="btn btn-g" onClick={backup}>Yedek indir (JSON)</button></div>}
     {isA && <div className="panel"><h3>Rol adları</h3><div className="fg">{ROLES.map(r => <label key={r}>{ROLE_DEF[lang][r]}<input value={rnm[r] ?? ''} onChange={e => setRnm({ ...rnm, [r]: e.target.value })} /></label>)}</div><button className="btn btn-p" onClick={() => saveSet('role_names', { ...RN, [lang]: rnm })}>Kaydet</button></div>}
+    {isA && <div className="panel" style={{ gridColumn:'1/-1' }}><h3>Menü adları</h3>
+      <p className="muted">Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.</p>
+      <div className="fg">{menuItems.map(([k, ic, d]) => <label key={k}>{d}<span className="menu-row">
+        <input maxLength={8} placeholder={ic} value={mic[k] ?? ''} onChange={e => setMic({ ...mic, [k]: e.target.value })} aria-label="Simge" />
+        <input maxLength={24} placeholder={d} value={mnm[k] ?? ''} onChange={e => setMnm({ ...mnm, [k]: e.target.value })} /></span></label>)}</div>
+      <button className="btn btn-p" onClick={() => saveMenu(false)}>Kaydet</button>{' '}<button className="btn btn-g" onClick={async () => (await askConfirm('Menü adları ve simgeleri varsayılana dönsün mü?')) && saveMenu(true)}>Varsayılana dön</button></div>}
     {isA && <div className="panel"><h3>Aşama adları</h3>
       <p className="muted">İş penceresinde, listelerde ve barkod ekranında görünen aşama adları. Sıra ve aşama sayısı sabittir; yalnızca görünen ad değişir. Boş bırakılan alan varsayılan adı kullanır. Adlar seçili dil için kaydedilir.</p>
       <div className="fg">{STAGE_CODES.map((k, i) => <label key={k}>{i + 1}. {STAGE_DEF[lang][k]}<input maxLength={STAGE_NAME_MAX} placeholder={STAGE_DEF[lang][k]} value={snm[k] ?? ''} onChange={e => setSnm({ ...snm, [k]: e.target.value })} /></label>)}</div>
       <button className="btn btn-p" onClick={() => saveStages(false)}>Kaydet</button>{' '}<button className="btn btn-g" onClick={async () => (await askConfirm('Aşama adları varsayılana dönsün mü?')) && saveStages(true)}>Varsayılana dön</button></div>}
     {isA && <div className="panel" style={{ gridColumn:'1/-1' }}><h3>Yetkiler</h3>
       <p className="muted">Hangi rol hangi sayfayı görebilir. Kasa ve Cari sadece admin ile muhasebe rolüne açılabilir.</p>
-      <div className="tw"><table><thead><tr><th>Rol</th>{PAGES.map(p => <th key={p[0]}>{p[2]}</th>)}</tr></thead>
+      <div className="tw"><table><thead><tr><th>Rol</th>{PAGES.map(p => <th key={p[0]}>{navL(p[0], p[2])}</th>)}</tr></thead>
         <tbody>{ROLES.filter(r => r !== 'admin').map(r => <tr key={r}><td><b>{rn(r)}</b></td>{PAGES.map(([k]) => <td key={k}><input type="checkbox" style={{ width:'auto' }} disabled={lock(r, k)} checked={!lock(r, k) && (rp[r] || []).includes(k)} onChange={() => setRole(r, k)} /></td>)}</tr>)}</tbody></table></div></div>}
   </div>
 }
