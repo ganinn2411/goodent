@@ -58,6 +58,43 @@ const late = c => c.due_date && !done(c) && c.due_date < today()
 // Eklenme zamanına göre yeniden eskiye (aynı anda eklenenlerde büyük iş no önce)
 const byNew = (a, b) => (new Date(b.received_at || b.created_at) - new Date(a.received_at || a.created_at)) || (b.case_no - a.case_no)
 
+// ---- Uygulama içi pencereler: tarayıcının confirm / alert / prompt kutuları yerine ----
+let dlgPush = null
+const dlg = o => new Promise(res => {
+  if (dlgPush) return dlgPush({ ...o, res })
+  res(o.type === 'confirm' ? window.confirm(o.msg) : o.type === 'prompt' ? window.prompt(o.msg, o.def) : (window.alert(o.msg), true))
+})
+const notify = msg => dlg({ type: 'alert', msg: String(msg) })
+const askConfirm = (msg, o = {}) => dlg({ type: 'confirm', msg, ...o })     // o: { title, ok, danger }
+const askPrompt = (msg, def = '') => dlg({ type: 'prompt', msg, def })
+const dlgCancelValue = d => d.type === 'confirm' ? false : d.type === 'prompt' ? null : true
+
+function DialogHost() {
+  const [q, setQ] = useState([]), [val, setVal] = useState('')
+  useEffect(() => { dlgPush = d => setQ(x => [...x, d]); return () => { dlgPush = null } }, [])
+  const d = q[0]
+  useEffect(() => {
+    if (!d) return
+    setVal(d.def || '')
+    const k = e => { if (e.key === 'Escape') { setQ(x => x.slice(1)); d.res(dlgCancelValue(d)) } }
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [d])
+  if (!d) return null
+  const close = v => { setQ(x => x.slice(1)); d.res(v) }
+  return <div className="ov dlg-ov" onMouseDown={e => e.target === e.currentTarget && close(dlgCancelValue(d))}>
+    <form className="modal dlg" role="alertdialog" aria-modal="true" onSubmit={e => { e.preventDefault(); close(d.type === 'prompt' ? val : true) }}>
+      {d.title && <div className="mh"><h3>{d.title}</h3></div>}
+      {String(d.msg).split('\n').map((l, i) => <p key={i} style={{ margin: '0 0 6px' }}>{l}</p>)}
+      {d.type === 'prompt' && <input autoFocus value={val} onChange={e => setVal(e.target.value)} style={{ marginTop: 8 }} />}
+      <div className="dlg-act">
+        {d.type !== 'alert' && <button type="button" className="btn btn-g" onClick={() => close(dlgCancelValue(d))}>Vazgeç</button>}
+        <button type="submit" autoFocus={d.type !== 'prompt'} className={'btn ' + (d.danger ? 'btn-danger' : 'btn-p')}>{d.ok || 'Tamam'}</button>
+      </div>
+    </form>
+  </div>
+}
+
 const loc = d => { const x = new Date(d); return new Date(x - x.getTimezoneOffset() * 6e4).toISOString().slice(0, 16) }
 const AR = {
 'Aşama adları':'أسماء المراحل','Varsayılana dön':'استعادة الافتراضي','Aynı ada sahip iki aşama olamaz.':'لا يمكن أن يكون لمرحلتين الاسم نفسه.','Aşama adları varsayılana dönsün mü?':'هل تريد إعادة أسماء المراحل إلى الافتراضي؟',
@@ -73,7 +110,7 @@ const AR = {
 'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam, giriş yapabilirsin.':'تم التسجيل، يمكنك الدخول.',
 'Şifremi unuttum':'نسيت كلمة المرور','Sıfırlama bağlantısını gönder':'إرسال رابط إعادة التعيين','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'اكتب بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'تم إرسال الرابط إلى بريدك الإلكتروني. تحقق من صندوق الوارد (والرسائل غير المرغوبة).','Yeni şifre belirle':'تعيين كلمة مرور جديدة','Yeni şifre (tekrar)':'كلمة المرور الجديدة (تكرار)','Şifreyi kaydet':'حفظ كلمة المرور','Şifre en az 6 karakter olmalı':'يجب ألا تقل كلمة المرور عن 6 أحرف','Şifreler aynı değil':'كلمتا المرور غير متطابقتين','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'تم تغيير كلمة المرور. جارٍ تحويلك إلى شاشة الدخول…','Şifre değişti. Yeni şifrenle giriş yap.':'تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.',
 'Açık işler':'الأعمال المفتوحة','Geciken işler':'الأعمال المتأخرة','Bugün teslim':'تسليم اليوم','Bu ay teslim edilen':'المسلَّم هذا الشهر','Aşamalara göre işler':'الأعمال حسب المرحلة','İş türü dağılımı':'توزيع أنواع العمل','Personel yükü':'عبء الموظفين','Bugün teslim / geciken':'تسليم اليوم / المتأخر','Gecikti':'متأخر','Bugün':'اليوم','Veri yok':'لا توجد بيانات','Atanmamış':'غير معيّن','Bugün teslim veya geciken iş yok 🎉':'لا توجد أعمال متأخرة أو تسلَّم اليوم 🎉',
-'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','Eklenme':'تاريخ الإضافة','✏ Düzenle':'✏ تعديل','🗑 Sil':'🗑 حذف','İşi düzenle':'تعديل العمل','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد',
+'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','Eklenme':'تاريخ الإضافة','✏ Düzenle':'✏ تعديل','🗑 Sil':'🗑 حذف','İşi düzenle':'تعديل العمل','Vazgeç':'إلغاء','Tamam':'موافق','🗑 Evet, sil':'🗑 نعم، احذف','İşi sil':'حذف العمل','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'سيتم حذف هذا العمل بمراحله وملفاته نهائيًا. لا يمكن التراجع عن هذا الإجراء.','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد',
 '— yeni doktor —':'— طبيب جديد —','Yeni doktor adı':'اسم الطبيب الجديد','Hasta adı':'اسم المريض','İş türü':'نوع العمل','Diş numaraları':'أرقام الأسنان','Renk':'اللون','Teslim tarihi':'تاريخ التسليم','Not':'ملاحظة','Kaydet':'حفظ','Fiyat (TL)':'السعر (TL)',
 'Sana atanmış devam eden iş yok 👍':'لا توجد أعمال معيّنة لك 👍','Boşta':'متفرغ','Ara…':'بحث…','Kayıt yok':'لا توجد سجلات','Düzenle':'تعديل','Kayıt silinsin mi? (Veri tamamen silinmez, arşivlenir)':'حذف السجل؟',
 'Yeni randevu':'موعد جديد','Başlık':'العنوان','Tarih':'التاريخ','Tarih / saat':'التاريخ / الوقت',
@@ -96,7 +133,7 @@ const EN = {
 'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam, giriş yapabilirsin.':'Registered, you can sign in now.',
 'Şifremi unuttum':'Forgot password','Sıfırlama bağlantısını gönder':'Send reset link','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'Enter your email and we will send you a password reset link.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'Link sent to your email. Check your inbox (and spam folder).','Yeni şifre belirle':'Set a new password','Yeni şifre (tekrar)':'New password (repeat)','Şifreyi kaydet':'Save password','Şifre en az 6 karakter olmalı':'Password must be at least 6 characters','Şifreler aynı değil':'Passwords do not match','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'Password changed. Redirecting to sign in…','Şifre değişti. Yeni şifrenle giriş yap.':'Password changed. Sign in with your new password.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'The link is invalid or expired. Request a new one.',
 'Açık işler':'Open jobs','Geciken işler':'Late jobs','Bugün teslim':'Due today','Bu ay teslim edilen':'Delivered this month','Aşamalara göre işler':'Jobs by stage','İş türü dağılımı':'Job type distribution','Personel yükü':'Staff workload','Bugün teslim / geciken':'Due today / late','Gecikti':'Late','Bugün':'Today','Veri yok':'No data','Atanmamış':'Unassigned','Bugün teslim veya geciken iş yok 🎉':'Nothing due today or late 🎉',
-'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','Eklenme':'Added','✏ Düzenle':'✏ Edit','🗑 Sil':'🗑 Delete','İşi düzenle':'Edit job','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake',
+'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','Eklenme':'Added','✏ Düzenle':'✏ Edit','🗑 Sil':'🗑 Delete','İşi düzenle':'Edit job','Vazgeç':'Cancel','Tamam':'OK','🗑 Evet, sil':'🗑 Yes, delete','İşi sil':'Delete job','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'This job will be PERMANENTLY deleted together with its stages and files. This cannot be undone.','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake',
 '— yeni doktor —':'— new doctor —','Yeni doktor adı':'New doctor name','Hasta adı':'Patient name','İş türü':'Job type','Diş numaraları':'Tooth numbers','Renk':'Shade','Teslim tarihi':'Due date','Not':'Note','Kaydet':'Save','Fiyat (TL)':'Price (TL)',
 'Sana atanmış devam eden iş yok 👍':'No active jobs assigned to you 👍','Boşta':'Idle','Ara…':'Search…','Kayıt yok':'No records','Düzenle':'Edit',
 'Yeni randevu':'New appointment','Başlık':'Title','Tarih':'Date','Tarih / saat':'Date / time',
@@ -136,7 +173,7 @@ function useTr(lang) {
   }, [lang])
 }
 
-export default function App() {
+function AppInner() {
   const [s, setS] = useState(null), [ok, setOk] = useState(false), [lang, setLang] = useState(localStorage.getItem('lang') || 'tr'), [rec, setRec] = useState(RECOVERY), [notice, setNotice] = useState('')
   useTr(lang); useTilt()
   const setL = n => { localStorage.setItem('lang', n); setLang(n) }
@@ -244,7 +281,7 @@ function Shell({ user, lang, setL }) {
   const role = me?.role, rp = { ...DEF, ...(settings.role_pages || {}) }
   const ok = p => p === 'dash' || p === 'tara' || role === 'admin' || (p !== 'ayar' && (!['cari', 'kasa'].includes(p) || role === 'accountant') && (rp[role] || []).includes(p))
   const cur = ok(page) ? page : 'dash'
-  const saveSet = async (id, value) => { const { error } = await sb.from('app_settings').upsert({ id, value }); if (error) return alert(error.message); load() }
+  const saveSet = async (id, value) => { const { error } = await sb.from('app_settings').upsert({ id, value }); if (error) return notify(error.message); load() }
   const ctx = { cases, staff, me, name, load, user, settings }
   const pages = {
     dash: <Dash {...ctx} />, stat: <Stats {...ctx} showMoney={ok('kasa')} />, ayar: <Settings {...ctx} saveSet={saveSet} lang={lang} setL={setL} />, isler: <Jobs {...ctx} />, gorev: <Mine {...ctx} />, ekip: <Team {...ctx} />, tara: <ScanPage lang={lang} stageNames={settings.stage_names} onClose={() => setPage('dash')} />,
@@ -302,7 +339,8 @@ function Dash({ cases, name, me }) {
 
 const Steps = ({ c }) => <div className="steps">{stages(c).map(s => <i key={s.id} className={s.status} title={stg(s.stage)} />)}</div>
 
-function Jobs({ cases, staff, name, load, user }) {
+function Jobs({ cases, staff, name, load, user, me }) {
+  const isAdmin = me?.role === 'admin'
   const [q, setQ] = useState(''), [fs, setFs] = useState('open'), [sel, setSel] = useState(null), [nw, setNw] = useState(false), [ed, setEd] = useState(null)
   const [arch, setArch] = useState([]), [av, setAv] = useState(0)
   useEffect(() => {
@@ -312,19 +350,23 @@ function Jobs({ cases, staff, name, load, user }) {
   const list = (fs === 'arsiv' ? arch : cases).filter(c => (fs === 'all' || fs === 'arsiv' || (fs === 'open' ? !done(c) : c.status === fs)) &&
     `${c.case_no} ${c.patients?.full_name} ${c.doctors?.full_name} ${c.work_type}`.toLowerCase().includes(q.toLowerCase())).sort(byNew)
   const cur = (fs === 'arsiv' ? arch : cases).find(c => c.id === sel)
-  const assign = async (id, u) => { const { error } = await sb.from('case_stages').update({ assigned_to: u || null }).eq('id', id); if (error) alert(error.message); load() }
-  const finish = async id => { const { error } = await sb.from('case_stages').update({ status:'bitti' }).eq('id', id); if (error) alert(error.message); load() }
-  const restore = async () => { const { error } = await sb.from('cases').update({ deleted_at: null }).eq('id', cur.id); if (error) return alert(error.message); setSel(null); setAv(v => v + 1); load() }
-  const archive = async () => { if (!confirm('Bu iş arşivlensin mi? (Veri silinmez, listeden kalkar)')) return; await sb.from('cases').update({ deleted_at: new Date().toISOString() }).eq('id', cur.id); setSel(null); load() }
-  // "Sil" = arşive taşı (veritabanı kayıtların gerçekten silinmesine izin vermez; Arşiv'den geri alınabilir)
+  const assign = async (id, u) => { const { error } = await sb.from('case_stages').update({ assigned_to: u || null }).eq('id', id); if (error) notify(error.message); load() }
+  const finish = async id => { const { error } = await sb.from('case_stages').update({ status:'bitti' }).eq('id', id); if (error) notify(error.message); load() }
+  const restore = async () => { const { error } = await sb.from('cases').update({ deleted_at: null }).eq('id', cur.id); if (error) return notify(error.message); setSel(null); setAv(v => v + 1); load() }
+  const archive = async () => { if (!(await askConfirm('Bu iş arşivlensin mi? (Veri silinmez, listeden kalkar)'))) return; await sb.from('cases').update({ deleted_at: new Date().toISOString() }).eq('id', cur.id); setSel(null); load() }
+  // "Sil" = KALICI silme (geri alınamaz). Veritabanında delete_case_permanently() fonksiyonu yapar; yalnızca yönetici.
   const remove = async c => {
-    if (!confirm(`#${c.case_no} numaralı iş silinsin mi?\n(Veri tamamen silinmez, Arşiv bölümüne taşınır; oradan geri yüklenebilir.)`)) return
-    const { error } = await sb.from('cases').update({ deleted_at: new Date().toISOString() }).eq('id', c.id)
-    if (error) return alert(error.message)
+    const yes = await askConfirm(`#${c.case_no} · ${c.patients?.full_name || ''}\nBu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.`, { title: 'İşi sil', ok: '🗑 Evet, sil', danger: true })
+    if (!yes) return
+    const files = await sb.from('case_files').select('storage_path').eq('case_id', c.id)
+    const { error } = await sb.rpc('delete_case_permanently', { p_case_id: c.id })
+    if (error) return notify(/delete_case_permanently|PGRST202/.test(error.message + (error.code || '')) ? 'Kalıcı silme henüz kurulmamış: delete_case_permanently.sql dosyasını Supabase > SQL Editor\'de bir kez çalıştırın.' : error.message)
+    const paths = (files.data || []).map(f => f.storage_path).filter(Boolean)
+    if (paths.length) await sb.storage.from('case-files').remove(paths)   // yüklenen dosyalar da silinsin
     if (sel === c.id) setSel(null)
-    load()
+    setAv(v => v + 1); load()
   }
-  const restoreRow = async c => { const { error } = await sb.from('cases').update({ deleted_at: null }).eq('id', c.id); if (error) return alert(error.message); setAv(v => v + 1); load() }
+  const restoreRow = async c => { const { error } = await sb.from('cases').update({ deleted_at: null }).eq('id', c.id); if (error) return notify(error.message); setAv(v => v + 1); load() }
   return <div className="panel">
     <div className="ph"><h3>{fs === 'arsiv' ? 'Arşiv' : 'İşler'} ({list.length})</h3>
       <input className="srch" placeholder="Ara: hasta, doktor, no…" value={q} onChange={e => setQ(e.target.value)} />
@@ -336,7 +378,7 @@ function Jobs({ cases, staff, name, load, user }) {
           <td><Steps c={c} /><small>{stg(c.current_stage)}</small></td><td>{name(cs?.assigned_to)}</td><td>{c.due_date || '—'} {late(c) && !c.deleted_at && <span className="pill r">Gecikti</span>}</td><td style={{ whiteSpace: 'nowrap' }}><small>{fmt(c.received_at || c.created_at)}</small></td>
           <td className="act" onClick={e => e.stopPropagation()}>{c.deleted_at
             ? <button className="btn btn-ok" onClick={() => restoreRow(c)}>♻ Geri yükle</button>
-            : <><button className="btn btn-g" onClick={() => setEd(c)}>✏ Düzenle</button><button className="btn btn-g btn-del" onClick={() => remove(c)}>🗑 Sil</button></>}</td></tr> })}</tbody></table>
+            : <button className="btn btn-g" onClick={() => setEd(c)}>✏ Düzenle</button>}{isAdmin && <button className="btn btn-g btn-del" onClick={() => remove(c)}>🗑 Sil</button>}</td></tr> })}</tbody></table>
       {!list.length && <p className="empty">İş bulunamadı</p>}</div>
     {cur && <Modal title={`#${cur.case_no} · ${cur.patients?.full_name}`} onClose={() => setSel(null)}>
       <p className="muted">Dr. {cur.doctors?.full_name} · {cur.work_type} · Diş: {cur.tooth_numbers || '—'} · Renk: {cur.shade || '—'} · Teslim: {cur.due_date || '—'}</p>
@@ -356,12 +398,12 @@ function NewCase({ onDone }) {
   const set = k => e => setF({ ...f, [k]: e.target.value })
   useEffect(() => { sb.from('doctors').select('id,full_name').is('deleted_at', null).then(r => setDocs(r.data || [])) }, [])
   async function save() {
-    if (!f.patient || (!f.doctor_id && !f.newDoctor)) return alert('Doktor ve hasta adı gerekli')
+    if (!f.patient || (!f.doctor_id && !f.newDoctor)) return notify('Doktor ve hasta adı gerekli')
     let did = f.doctor_id
-    if (!did) { const d = await sb.from('doctors').insert({ full_name: f.newDoctor }).select().single(); if (d.error) return alert(d.error.message); did = d.data.id }
-    const p = await sb.from('patients').insert({ full_name: f.patient }).select().single(); if (p.error) return alert(p.error.message)
+    if (!did) { const d = await sb.from('doctors').insert({ full_name: f.newDoctor }).select().single(); if (d.error) return notify(d.error.message); did = d.data.id }
+    const p = await sb.from('patients').insert({ full_name: f.patient }).select().single(); if (p.error) return notify(p.error.message)
     const c = await sb.from('cases').insert({ doctor_id: did, patient_id: p.data.id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null }).select().single()
-    if (c.error) return alert(c.error.message)
+    if (c.error) return notify(c.error.message)
     printCaseLabel({ case_no: c.data.case_no, patient: f.patient, doctor: f.doctor_id ? docs.find(d => d.id === f.doctor_id)?.full_name : f.newDoctor, work_type: f.work_type, tooth_numbers: f.tooth_numbers, due_date: f.due_date }).catch(() => {})
     onDone()
   }
@@ -383,15 +425,15 @@ function EditCase({ c, onDone }) {
   const set = k => e => setF({ ...f, [k]: e.target.value })
   useEffect(() => { sb.from('doctors').select('id,full_name').is('deleted_at', null).then(r => setDocs(r.data || [])) }, [])
   async function save() {
-    if (!f.patient.trim() || !f.doctor_id) return alert('Doktor ve hasta adı gerekli')
+    if (!f.patient.trim() || !f.doctor_id) return notify('Doktor ve hasta adı gerekli')
     setBusy(true)
     if (f.patient.trim() !== (c.patients?.full_name || '')) {
       const p = await sb.from('patients').update({ full_name: f.patient.trim() }).eq('id', c.patient_id)
-      if (p.error) { setBusy(false); return alert(p.error.message) }
+      if (p.error) { setBusy(false); return notify(p.error.message) }
     }
     const r = await sb.from('cases').update({ doctor_id: f.doctor_id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null }).eq('id', c.id)
     setBusy(false)
-    if (r.error) return alert(r.error.message)
+    if (r.error) return notify(r.error.message)
     onDone()
   }
   const types = WORK.includes(f.work_type) ? WORK : [f.work_type, ...WORK]
@@ -408,7 +450,7 @@ function EditCase({ c, onDone }) {
 
 function Mine({ cases, user, load }) {
   const mine = cases.flatMap(c => stages(c).filter(s => s.assigned_to === user.id && s.status === 'devam').map(s => ({ c, s })))
-  const finish = async id => { const { error } = await sb.from('case_stages').update({ status:'bitti' }).eq('id', id); if (error) alert(error.message); load() }
+  const finish = async id => { const { error } = await sb.from('case_stages').update({ status:'bitti' }).eq('id', id); if (error) notify(error.message); load() }
   return <div className="cols">{mine.map(({ c, s }) => <div key={s.id} className="panel" style={late(c) ? { borderLeft:'5px solid var(--bad)' } : {}}>
     <b>#{c.case_no}</b> <span className="pill">{stg(s.stage)}</span><h3 style={{ marginTop:8 }}>{c.patients?.full_name} · {c.work_type}</h3>
     <p className="muted">Diş: {c.tooth_numbers || '—'} · Renk: {c.shade || '—'} · Teslim: {c.due_date || '—'}</p><p>{c.notes}</p>
@@ -422,7 +464,7 @@ function Stok({ me, name, user }) {
     <Crud key={av} title="Stok" table="inventory_items" view="stock_levels" soft={false} order={['name', true]} add="Yeni malzeme"
       cols={[{ k:'name', label:'Malzeme' }, { k:'brand', label:'Marka' }, { label:'Miktar', r: r => <span className={'pill ' + (r.low ? 'r' : 'g')}>{Number(r.qty)}</span> }, { k:'min_level', label:'Min.' }]}
       fields={[{ k:'name', label:'Malzeme adı', required:true, w:1 }, { k:'brand', label:'Marka' }, { k:'min_level', label:'Minimum stok', type:'number', def:0 }]}
-      extra={(r, reload) => <><button className="btn btn-g" onClick={() => setPre({ item_id: r.id, item_name: r.name })}>📝 İste</button><button className="btn btn-g" onClick={async () => { const q = prompt('Miktar (giriş: 5, çıkış: -2)'); if (!q || isNaN(q)) return; const { error } = await sb.from('stock_movements').insert({ item_id:r.id, qty:Number(q) }); if (error) alert(error.message); reload() }}>± Hareket</button></>} />
+      extra={(r, reload) => <><button className="btn btn-g" onClick={() => setPre({ item_id: r.id, item_name: r.name })}>📝 İste</button><button className="btn btn-g" onClick={async () => { const q = await askPrompt('Miktar (giriş: 5, çıkış: -2)'); if (!q || isNaN(q)) return; const { error } = await sb.from('stock_movements').insert({ item_id:r.id, qty:Number(q) }); if (error) notify(error.message); reload() }}>± Hareket</button></>} />
     <MatReq me={me} name={name} user={user} pre={pre} clearPre={() => setPre(null)} onStock={() => setAv(v => v + 1)} />
   </>
 }
@@ -442,18 +484,18 @@ function MatReq({ me, name, user, pre, clearPre, onStock }) {
   const openNew = () => { setF({ item_id:'', item_name:'', qty:'', note:'' }); setOpen(true) }
   async function save() {
     const nm = f.item_id ? items.find(i => i.id === f.item_id)?.name : f.item_name.trim()
-    if (!nm) return alert('Malzeme adı gerekli')
-    const q = Number(f.qty); if (!q || q <= 0) return alert('Miktar gerekli')
+    if (!nm) return notify('Malzeme adı gerekli')
+    const q = Number(f.qty); if (!q || q <= 0) return notify('Miktar gerekli')
     const { error } = await sb.from('material_requests').insert({ item_id: f.item_id || null, item_name: nm, qty: q, note: f.note || null, requested_by: user.id })
-    if (error) return alert(error.message)
+    if (error) return notify(error.message)
     setOpen(false); load()
   }
   async function setStatus(r, status) {
     const { error } = await sb.from('material_requests').update({ status, handled_by: user.id }).eq('id', r.id)
-    if (error) return alert(error.message)
-    if (status === 'geldi' && r.item_id && confirm(`Stoğa giriş yapılsın mı? (+${r.qty} ${r.item_name})`)) {
+    if (error) return notify(error.message)
+    if (status === 'geldi' && r.item_id && (await askConfirm(`Stoğa giriş yapılsın mı? (+${r.qty} ${r.item_name})`))) {
       const m = await sb.from('stock_movements').insert({ item_id: r.item_id, qty: Number(r.qty), note: 'Malzeme talebi' })
-      if (m.error) alert(m.error.message); else onStock()
+      if (m.error) notify(m.error.message); else onStock()
     }
     load()
   }
@@ -498,7 +540,7 @@ function Crud({ title, table, view, sel = '*', soft = true, order, cols, fields,
   const [rows, setRows] = useState([]), [open, setOpen] = useState(false), [f, setF] = useState({}), [eid, setEid] = useState(null), [op, setOp] = useState({}), [q, setQ] = useState('')
   const load = useCallback(async () => {
     let r = sb.from(view || table).select(sel); if (soft) r = r.is('deleted_at', null); if (order) r = r.order(order[0], { ascending: order[1] })
-    const { data, error } = await r; if (error) alert(error.message); setRows(data || [])
+    const { data, error } = await r; if (error) notify(error.message); setRows(data || [])
   }, [])
   useEffect(() => { load(); fields.filter(x => x.from).forEach(async x => { const [t, v, l] = x.from
     const { data } = await sb.from(t).select(`${v},${l}`).is('deleted_at', null); setOp(o => ({ ...o, [x.k]: (data || []).map(d => ({ v: d[v], l: d[l] })) })) }) }, [load])
@@ -509,13 +551,13 @@ function Crud({ title, table, view, sel = '*', soft = true, order, cols, fields,
     const p = {}
     for (const x of fields) { if (eid && !(x.k in f)) continue; let v = f[x.k]; if (v === '' || v === undefined) v = null
       if (v !== null && x.type === 'number') v = Number(v); if (v !== null && x.type === 'datetime-local') v = new Date(v).toISOString()
-      if (x.required && v === null) return alert(x.label + ' gerekli'); p[x.k] = v }
+      if (x.required && v === null) return notify(x.label + ' gerekli'); p[x.k] = v }
     const { error } = eid ? await sb.from(table).update(p).eq('id', eid) : await sb.from(table).insert(p)
-    if (error) return alert(error.message); setOpen(false); load()
+    if (error) return notify(error.message); setOpen(false); load()
   }
   async function del(r) {
-    if (!confirm('Kayıt silinsin mi? (Veri tamamen silinmez, arşivlenir)')) return
-    const { error } = await sb.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', r.id); if (error) alert(error.message); load()
+    if (!(await askConfirm('Kayıt silinsin mi? (Veri tamamen silinmez, arşivlenir)'))) return
+    const { error } = await sb.from(table).update({ deleted_at: new Date().toISOString() }).eq('id', r.id); if (error) notify(error.message); load()
   }
   return <>{top && top(base)}
     <div className="panel"><div className="ph"><h3>{title}</h3><input className="srch" placeholder="Ara…" value={q} onChange={e => setQ(e.target.value)} /><button className="btn btn-p" onClick={openNew}>＋ {add}</button></div>
@@ -541,13 +583,13 @@ function Files({ cid, user, name }) {
     const files = [...e.target.files], inp = e.target; setBusy(true)
     for (const file of files) {
       const path = `${cid}/${Date.now()}_${file.name.replace(/[^\w.\-]/g, '_')}`
-      const { error } = await sb.storage.from('case-files').upload(path, file); if (error) { alert(error.message); continue }
+      const { error } = await sb.storage.from('case-files').upload(path, file); if (error) { notify(error.message); continue }
       await sb.from('case_files').insert({ case_id: cid, storage_path: path, file_name: file.name, kind: file.type.startsWith('image') ? 'foto' : file.name.split('.').pop().toLowerCase(), uploaded_by: user.id })
     }
     setBusy(false); inp.value = ''; load()
   }
-  const open = async f => { const { data, error } = await sb.storage.from('case-files').createSignedUrl(f.storage_path, 300); if (error) return alert(error.message); window.open(data.signedUrl, '_blank') }
-  const del = async f => { if (!confirm('Dosya kaldırılsın mı?')) return; await sb.from('case_files').update({ deleted_at: new Date().toISOString() }).eq('id', f.id); load() }
+  const open = async f => { const { data, error } = await sb.storage.from('case-files').createSignedUrl(f.storage_path, 300); if (error) return notify(error.message); window.open(data.signedUrl, '_blank') }
+  const del = async f => { if (!(await askConfirm('Dosya kaldırılsın mı?'))) return; await sb.from('case_files').update({ deleted_at: new Date().toISOString() }).eq('id', f.id); load() }
   return <div style={{ marginTop:14 }}><h3>Dosyalar</h3>
     {fl.map(f => <div className="fr" key={f.id}><span>📎 {f.file_name}<br /><small>{name(f.uploaded_by)} · {fmt(f.created_at)}</small></span><span><button className="btn btn-g" onClick={() => open(f)}>👁 Aç</button> <button className="btn btn-g" onClick={() => del(f)}>🗑</button></span></div>)}
     {!fl.length && <small>Dosya yok</small>}<br />
@@ -626,14 +668,14 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
   async function saveStages(reset) {
     const clean = reset ? {} : Object.fromEntries(STAGE_CODES.map(k => [k, (snm[k] || '').trim()]).filter(([k, v]) => v && v !== STAGE_DEF[lang][k]))
     const names = STAGE_CODES.map(k => (clean[k] || STAGE_DEF[lang][k]).toLocaleLowerCase(lang))
-    if (new Set(names).size !== names.length) return alert('Aynı ada sahip iki aşama olamaz.')
+    if (new Set(names).size !== names.length) return notify('Aynı ada sahip iki aşama olamaz.')
     saveSet('stage_names', { ...stOv, [lang]: clean })
   }
   useEffect(() => { setRnm(Object.fromEntries(ROLES.map(r => [r, rn(r)]))) }, [lang, settings.role_names])
   const lock = (r, p) => ['cari', 'kasa'].includes(p) && r !== 'accountant'
   const setRole = (r, p) => { const c = rp[r] || []; saveSet('role_pages', { ...rp, [r]: c.includes(p) ? c.filter(x => x !== p) : [...c, p] }) }
-  async function changePw() { if (pw.length < 6) return alert('Şifre en az 6 karakter olmalı'); const { error } = await sb.auth.updateUser({ password: pw }); alert(error ? error.message : 'Şifre değişti'); setPw('') }
-  async function saveName() { const { error } = await sb.from('profiles').update({ full_name: nm }).eq('id', user.id); if (error) alert(error.message); load() }
+  async function changePw() { if (pw.length < 6) return notify('Şifre en az 6 karakter olmalı'); const { error } = await sb.auth.updateUser({ password: pw }); notify(error ? error.message : 'Şifre değişti'); setPw('') }
+  async function saveName() { const { error } = await sb.from('profiles').update({ full_name: nm }).eq('id', user.id); if (error) notify(error.message); load() }
   async function backup() {
     const out = {}
     for (const t of ['accounts', 'doctors', 'patients', 'cases', 'case_stages', 'case_files', 'appointments', 'inventory_items', 'stock_movements', 'transactions', 'profiles', 'audit_log']) {
@@ -653,7 +695,7 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
     {isA && <div className="panel"><h3>Aşama adları</h3>
       <p className="muted">İş penceresinde, listelerde ve barkod ekranında görünen aşama adları. Sıra ve aşama sayısı sabittir; yalnızca görünen ad değişir. Boş bırakılan alan varsayılan adı kullanır. Adlar seçili dil için kaydedilir.</p>
       <div className="fg">{STAGE_CODES.map((k, i) => <label key={k}>{i + 1}. {STAGE_DEF[lang][k]}<input maxLength={STAGE_NAME_MAX} placeholder={STAGE_DEF[lang][k]} value={snm[k] ?? ''} onChange={e => setSnm({ ...snm, [k]: e.target.value })} /></label>)}</div>
-      <button className="btn btn-p" onClick={() => saveStages(false)}>Kaydet</button>{' '}<button className="btn btn-g" onClick={() => confirm('Aşama adları varsayılana dönsün mü?') && saveStages(true)}>Varsayılana dön</button></div>}
+      <button className="btn btn-p" onClick={() => saveStages(false)}>Kaydet</button>{' '}<button className="btn btn-g" onClick={async () => (await askConfirm('Aşama adları varsayılana dönsün mü?')) && saveStages(true)}>Varsayılana dön</button></div>}
     {isA && <div className="panel" style={{ gridColumn:'1/-1' }}><h3>Yetkiler</h3>
       <p className="muted">Hangi rol hangi sayfayı görebilir. Kasa ve Cari sadece admin ile muhasebe rolüne açılabilir.</p>
       <div className="tw"><table><thead><tr><th>Rol</th>{PAGES.map(p => <th key={p[0]}>{p[2]}</th>)}</tr></thead>
@@ -762,4 +804,8 @@ function CaseQR({ no }) {
   const [src, setSrc] = useState('')
   useEffect(() => { let on = true; caseQrUrl(no, 240).then(u => on && setSrc(u)).catch(() => {}); return () => { on = false } }, [no])
   return src ? <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0' }}><img src={src} alt="QR" width="120" height="120" style={{ background: '#fff', border: '1px solid #e5e9f2', borderRadius: 8 }} /><b>#{no}</b></div> : null
+}
+
+export default function App() {
+  return <><AppInner /><DialogHost /></>
 }
