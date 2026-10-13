@@ -506,7 +506,7 @@ function Stats({ cases, name, showMoney }) {
   const dn = L.filter(c => c.status === 'teslim_edildi'), nd = L.filter(c => !done(c))
   const fin = st => L.flatMap(c => stages(c)).filter(s => st.includes(s.stage) && s.status === 'bitti')
   const rev = L.filter(c => c.currency === 'TL').reduce((a, c) => a + Number(c.price || 0), 0)
-  return <>
+  return <div className="fit">
     <div className="panel"><div className="ph"><h3>Filtre</h3>
       <DateInput style={{ width:130 }} value={from} onChange={setFrom} />
       <DateInput style={{ width:130 }} value={to} onChange={setTo} />
@@ -519,7 +519,7 @@ function Stats({ cases, name, showMoney }) {
       <div className="panel"><h3>Teknisyen performansı</h3><Bars data={count(fin(['uretim', 'porselen']), s => name(s.assigned_to))} /></div>
       <div className="panel"><h3>Teslim edilen iş türleri</h3><Bars data={count(dn, c => c.work_type)} /></div>
       <div className="panel"><h3>Teslim edilmeyen iş türleri</h3><Bars data={count(nd, c => c.work_type)} /></div>
-    </div></>
+    </div></div>
 }
 
 function useTilt() {
