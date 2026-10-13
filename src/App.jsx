@@ -271,7 +271,7 @@ function Dash({ cases, name, me }) {
   const open = cases.filter(c => !done(c)), month = today().slice(0, 7)
   const active = open.flatMap(c => stages(c).filter(s => s.status === 'devam'))
   const todayList = open.filter(c => c.due_date === today() || late(c))
-  return <div className="fit dash">
+  return <>
     <div className="hero"><div><h1>Hoş geldin, {me?.full_name} 👋</h1><p>Dental laboratuvar yönetim paneli</p></div><Tooth3D /></div>
     <div className="cards">
       <Stat label="Açık işler" value={open.length} c="#2563eb" />
@@ -284,9 +284,9 @@ function Dash({ cases, name, me }) {
       <div className="panel"><h3>İş türü dağılımı</h3><Bars data={count(open, c => c.work_type)} /></div>
       <div className="panel"><h3>Personel yükü</h3><Bars data={count(active, s => s.assigned_to ? name(s.assigned_to) : 'Atanmamış')} /></div>
     </div>
-    <div className="panel"><h3>Bugün teslim / geciken</h3>
+    <div className="panel grow"><h3>Bugün teslim / geciken</h3>
       {todayList.length ? <div className="tw"><table><tbody>{todayList.map(c => <tr key={c.id}><td>#{c.case_no}</td><td>{c.patients?.full_name}</td><td>Dr. {c.doctors?.full_name}</td><td>{c.work_type}</td><td>{c.due_date}</td><td>{late(c) ? <span className="pill r">Gecikti</span> : <span className="pill y">Bugün</span>}</td></tr>)}</tbody></table></div> : <p className="empty">Bugün teslim veya geciken iş yok 🎉</p>}</div>
-  </div>
+  </>
 }
 
 const Steps = ({ c }) => <div className="steps">{stages(c).map(s => <i key={s.id} className={s.status} title={stg(s.stage)} />)}</div>
