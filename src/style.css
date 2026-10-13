@@ -411,3 +411,19 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
   .fit .cols{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(300px,100%),1fr));grid-template-rows:none}
   .fit .cols .panel{overflow:visible}
 }
+
+/* ---------- Dashboard: tek ekrana sığan düzen ---------- */
+.fit.dash{grid-template-rows:auto auto minmax(0,1.15fr) minmax(0,.85fr)}
+.fit.dash .hero{padding:8px 24px}
+.fit.dash .hero h1{font-size:22px;margin:0 0 2px}
+.fit.dash .t3d{width:150px;height:100px}
+.fit.dash .cards{grid-template-columns:repeat(4,minmax(0,1fr))}
+.fit.dash .cols{grid-template-rows:minmax(0,1fr)}
+.fit.dash>.panel{min-height:0;overflow:auto;padding:12px 16px}
+.fit.dash>.panel h3{margin:0 0 4px}
+.fit.dash td{padding:7px 10px}
+@media(max-width:900px){
+  .fit.dash .cards{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
+  .fit.dash .cols{grid-template-rows:none}
+  .fit.dash>.panel{overflow:visible}
+}
