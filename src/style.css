@@ -550,3 +550,8 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
 [data-theme=light] .steps i.devam{background:var(--warn);box-shadow:0 0 6px rgba(217,119,6,.35)}
 [data-theme=light] .tlr.bitti .dot{background:var(--ok);box-shadow:0 0 6px rgba(5,150,105,.45)}
 [data-theme=light] .tlr.devam .dot{background:var(--warn);box-shadow:0 0 6px rgba(217,119,6,.45)}
+
+/* İşler listesi: "Eklenme" (tarih + saat) sütunu — telefondaki kart görünümünde tam satır */
+@media(max-width:700px){
+  table.jobs td:nth-child(8){grid-column:1/-1;color:var(--mut);font-size:12px}
+}
