@@ -543,3 +543,10 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
   [data-theme=light] .side{background-color:rgba(255,255,255,.97)}
   [data-theme=light] .scrim{background:rgba(15,23,42,.40)}
 }
+
+/* Açık tema: aşama çubuklarında tamamlanan / devam eden renkler görünsün
+   (yukarıdaki genel ".steps i" gri kuralı bunları eziyordu) */
+[data-theme=light] .steps i.bitti{background:var(--ok);box-shadow:0 0 6px rgba(5,150,105,.30)}
+[data-theme=light] .steps i.devam{background:var(--warn);box-shadow:0 0 6px rgba(217,119,6,.35)}
+[data-theme=light] .tlr.bitti .dot{background:var(--ok);box-shadow:0 0 6px rgba(5,150,105,.45)}
+[data-theme=light] .tlr.devam .dot{background:var(--warn);box-shadow:0 0 6px rgba(217,119,6,.45)}
