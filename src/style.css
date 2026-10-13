@@ -580,3 +580,7 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
 .stat .go-ar{position:absolute;top:12px;inset-inline-end:14px;z-index:1;font-size:15px;color:var(--mut);opacity:.55;
   transition:opacity .15s,transform .15s}
 .stat.go:hover .go-ar{opacity:1;transform:translate(2px,-2px)}
+
+/* Ayarlar > Menü adları: simge + ad yan yana */
+.menu-row{display:grid;grid-template-columns:62px minmax(0,1fr);gap:8px;font-weight:400}
+.menu-row input:first-child{text-align:center;font-size:18px;padding-inline:4px}
