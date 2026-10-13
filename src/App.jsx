@@ -263,7 +263,7 @@ function Recovery({ lang, setL, hasSession, onDone }) {
 }
 
 function Shell({ user, lang, setL }) {
-  const [page, setPage] = useState(() => sessionStorage.getItem('pendingScan') ? 'tara' : 'dash'), [menu, setMenu] = useState(false)
+  const [page, setPage] = useState(() => sessionStorage.getItem('pendingScan') ? 'tara' : 'dash'), [menu, setMenu] = useState(false), [jf, setJf] = useState(null)
   const [cases, setCases] = useState([]), [staff, setStaff] = useState([]), [me, setMe] = useState(null), [settings, setSettings] = useState({})
   const load = useCallback(async () => {
     const [c, p, m, st] = await Promise.all([
@@ -282,9 +282,11 @@ function Shell({ user, lang, setL }) {
   const ok = p => p === 'dash' || p === 'tara' || role === 'admin' || (p !== 'ayar' && (!['cari', 'kasa'].includes(p) || role === 'accountant') && (rp[role] || []).includes(p))
   const cur = ok(page) ? page : 'dash'
   const saveSet = async (id, value) => { const { error } = await sb.from('app_settings').upsert({ id, value }); if (error) return notify(error.message); load() }
-  const ctx = { cases, staff, me, name, load, user, settings }
+  // Dashboard kartlarından İşler sayfasını hazır filtreyle aç (İşler sayfasına yetkisi yoksa kartlar tıklanmaz)
+  const go = ok('isler') ? (p, f) => { setJf(f || null); setPage(p) } : null
+  const ctx = { cases, staff, me, name, load, user, settings, go }
   const pages = {
-    dash: <Dash {...ctx} />, stat: <Stats {...ctx} showMoney={ok('kasa')} />, ayar: <Settings {...ctx} saveSet={saveSet} lang={lang} setL={setL} />, isler: <Jobs {...ctx} />, gorev: <Mine {...ctx} />, ekip: <Team {...ctx} />, tara: <ScanPage lang={lang} stageNames={settings.stage_names} onClose={() => setPage('dash')} />,
+    dash: <Dash {...ctx} />, stat: <Stats {...ctx} showMoney={ok('kasa')} />, ayar: <Settings {...ctx} saveSet={saveSet} lang={lang} setL={setL} />, isler: <Jobs key={jf || 'all'} {...ctx} init={jf} />, gorev: <Mine {...ctx} />, ekip: <Team {...ctx} />, tara: <ScanPage lang={lang} stageNames={settings.stage_names} onClose={() => setPage('dash')} />,
     randevu: <Crud title="Randevular" table="appointments" sel="*, doctors(full_name)" order={['starts_at', true]} add="Yeni randevu"
       cols={[{ label:'Başlık', k:'title' }, { label:'Tarih', r: r => fmt(r.starts_at) }, { label:'Doktor', r: r => r.doctors?.full_name || '—' }, { k:'notes', label:'Not' }]}
       fields={[{ k:'title', label:'Başlık', required:true, w:1 }, { k:'starts_at', label:'Tarih / saat', type:'datetime-local', required:true }, { k:'doctor_id', label:'Doktor', type:'select', from:['doctors','id','full_name'] }, { k:'notes', label:'Not', type:'textarea', w:1 }]} />,
@@ -298,7 +300,7 @@ function Shell({ user, lang, setL }) {
     {menu && <div className="scrim" onClick={() => setMenu(false)} />}
     <aside className={'side ' + (menu ? 'open' : '')}>
       <div className="logo"><i>🦷</i>{settings.lab_name || 'Goodent'}</div>
-      {NAV.filter(n => ok(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setMenu(false) }}>{ic} {l}</button>)}
+      {NAV.filter(n => ok(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setJf(null); setMenu(false) }}>{ic} {l}</button>)}
       <div className="sp" /><button onClick={() => sb.auth.signOut()}>🚪 Çıkış</button>
     </aside>
     <div className="main">
@@ -308,24 +310,26 @@ function Shell({ user, lang, setL }) {
     </div></div>
 }
 
-const Stat = ({ label, value, c }) => <div className="stat" style={{ '--c': c }}><small>{label}</small><b>{value}</b></div>
+const Stat = ({ label, value, c, onClick }) => <div className={'stat' + (onClick ? ' go' : '')} style={{ '--c': c }}
+  {...(onClick ? { role: 'button', tabIndex: 0, onClick, onKeyDown: e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onClick() } } } : {})}>
+  <small>{label}</small><b>{value}</b>{onClick && <span className="go-ar">↗</span>}</div>
 function Bars({ data }) {
   const max = Math.max(1, ...data.map(d => d[1]))
   return data.length ? data.map(([k, v]) => <div className="bar" key={k}><span>{k}</span><div><i style={{ width: v / max * 100 + '%' }} /></div><b>{v}</b></div>) : <p className="empty">Veri yok</p>
 }
 const count = (arr, f) => Object.entries(arr.reduce((m, x) => { const k = f(x) || '—'; m[k] = (m[k] || 0) + 1; return m }, {}))
 
-function Dash({ cases, name, me }) {
+function Dash({ cases, name, me, go }) {
   const open = cases.filter(c => !done(c)), month = today().slice(0, 7)
   const active = open.flatMap(c => stages(c).filter(s => s.status === 'devam'))
   const todayList = open.filter(c => c.due_date === today() || late(c))
   return <>
     <div className="hero"><div><h1>Hoş geldin, {me?.full_name} 👋</h1><p>Dental laboratuvar yönetim paneli</p></div><Tooth3D /></div>
     <div className="cards">
-      <Stat label="Açık işler" value={open.length} c="#2563eb" />
-      <Stat label="Geciken işler" value={open.filter(late).length} c="#dc2626" />
-      <Stat label="Bugün teslim" value={open.filter(c => c.due_date === today()).length} c="#f59e0b" />
-      <Stat label="Bu ay teslim edilen" value={cases.filter(c => c.delivered_at?.startsWith(month)).length} c="#16a34a" />
+      <Stat label="Açık işler" value={open.length} c="#2563eb" onClick={go && (() => go('isler', 'open'))} />
+      <Stat label="Geciken işler" value={open.filter(late).length} c="#dc2626" onClick={go && (() => go('isler', 'late'))} />
+      <Stat label="Bugün teslim" value={open.filter(c => c.due_date === today()).length} c="#f59e0b" onClick={go && (() => go('isler', 'today'))} />
+      <Stat label="Bu ay teslim edilen" value={cases.filter(c => c.delivered_at?.startsWith(month)).length} c="#16a34a" onClick={go && (() => go('isler', 'month'))} />
     </div>
     <div className="cols">
       <div className="panel"><h3>Aşamalara göre işler</h3><Bars data={count(active, s => stg(s.stage))} /></div>
@@ -339,15 +343,15 @@ function Dash({ cases, name, me }) {
 
 const Steps = ({ c }) => <div className="steps">{stages(c).map(s => <i key={s.id} className={s.status} title={stg(s.stage)} />)}</div>
 
-function Jobs({ cases, staff, name, load, user, me }) {
+function Jobs({ cases, staff, name, load, user, me, init }) {
   const isAdmin = me?.role === 'admin'
-  const [q, setQ] = useState(''), [fs, setFs] = useState('open'), [sel, setSel] = useState(null), [nw, setNw] = useState(false), [ed, setEd] = useState(null)
+  const [q, setQ] = useState(''), [fs, setFs] = useState(init || 'open'), [sel, setSel] = useState(null), [nw, setNw] = useState(false), [ed, setEd] = useState(null)
   const [arch, setArch] = useState([]), [av, setAv] = useState(0)
   useEffect(() => {
     if (fs !== 'arsiv') return
     sb.from('cases').select('*, patients(full_name), doctors(full_name), case_stages(*)').not('deleted_at', 'is', null).order('deleted_at', { ascending: false }).then(r => setArch(r.data || []))
   }, [fs, av])
-  const list = (fs === 'arsiv' ? arch : cases).filter(c => (fs === 'all' || fs === 'arsiv' || (fs === 'open' ? !done(c) : c.status === fs)) &&
+  const list = (fs === 'arsiv' ? arch : cases).filter(c => (fs === 'all' || fs === 'arsiv' || (fs === 'open' ? !done(c) : fs === 'late' ? late(c) : fs === 'today' ? !done(c) && c.due_date === today() : fs === 'month' ? !!c.delivered_at?.startsWith(today().slice(0, 7)) : c.status === fs)) &&
     `${c.case_no} ${c.patients?.full_name} ${c.doctors?.full_name} ${c.work_type}`.toLowerCase().includes(q.toLowerCase())).sort(byNew)
   const cur = (fs === 'arsiv' ? arch : cases).find(c => c.id === sel)
   const assign = async (id, u) => { const { error } = await sb.from('case_stages').update({ assigned_to: u || null }).eq('id', id); if (error) notify(error.message); load() }
@@ -370,7 +374,7 @@ function Jobs({ cases, staff, name, load, user, me }) {
   return <div className="panel">
     <div className="ph"><h3>{fs === 'arsiv' ? 'Arşiv' : 'İşler'} ({list.length})</h3>
       <input className="srch" placeholder="Ara: hasta, doktor, no…" value={q} onChange={e => setQ(e.target.value)} />
-      <select style={{ width:'auto' }} value={fs} onChange={e => setFs(e.target.value)}><option value="open">Açık işler</option><option value="all">Hepsi</option><option value="arsiv">🗄 Arşiv</option>{Object.entries(CS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
+      <select style={{ width:'auto' }} value={fs} onChange={e => setFs(e.target.value)}><option value="open">Açık işler</option><option value="late">Geciken işler</option><option value="today">Bugün teslim</option><option value="month">Bu ay teslim edilen</option><option value="all">Hepsi</option><option value="arsiv">🗄 Arşiv</option>{Object.entries(CS).map(([k, v]) => <option key={k} value={k}>{v}</option>)}</select>
       <button className="btn btn-p" onClick={() => setNw(true)}>＋ Yeni iş</button></div>
     <div className="tw"><table className="jobs"><thead><tr><th>No</th><th>Hasta</th><th>Doktor</th><th>İş</th><th>İlerleme</th><th>Sorumlu</th><th>Teslim</th><th>Eklenme</th><th></th></tr></thead>
       <tbody>{list.map(c => { const cs = stages(c).find(s => s.status === 'devam')
