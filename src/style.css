@@ -21,7 +21,7 @@
 }
 
 *{box-sizing:border-box;scrollbar-width:thin;scrollbar-color:#2a3558 transparent}
-html,body{max-width:100%;overflow-x:hidden}
+html,body{max-width:100%;overflow-x:clip}  /* hidden değil: sticky yan menü/üst çubuk bozulmasın */
 body{
   margin:0;
   font-family:Inter,"Segoe UI Variable Display","Segoe UI",system-ui,-apple-system,Tahoma,sans-serif;
@@ -412,18 +412,6 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
   .fit .cols .panel{overflow:visible}
 }
 
-/* ---------- Dashboard: tek ekrana sığan düzen ---------- */
-.fit.dash{grid-template-rows:auto auto minmax(0,1.15fr) minmax(0,.85fr)}
-.fit.dash .hero{padding:8px 24px}
-.fit.dash .hero h1{font-size:22px;margin:0 0 2px}
-.fit.dash .t3d{width:150px;height:100px}
-.fit.dash .cards{grid-template-columns:repeat(4,minmax(0,1fr))}
-.fit.dash .cols{grid-template-rows:minmax(0,1fr)}
-.fit.dash>.panel{min-height:0;overflow:auto;padding:12px 16px}
-.fit.dash>.panel h3{margin:0 0 4px}
-.fit.dash td{padding:7px 10px}
-@media(max-width:900px){
-  .fit.dash .cards{grid-template-columns:repeat(auto-fit,minmax(140px,1fr))}
-  .fit.dash .cols{grid-template-rows:none}
-  .fit.dash>.panel{overflow:visible}
-}
+/* Sayfa en az ekran boyu kadar olsun; son panel kalan boşluğu doldursun */
+.page{min-height:calc(100vh - 64px);min-height:calc(100dvh - 64px)}
+.page>.panel.grow{flex:1}
