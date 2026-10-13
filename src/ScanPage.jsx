@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
 import { supabase } from './supabase'
+import { stageLabel } from './stages'
 
 // Uygulamanın diliyle aynı: tr / en / ar
 const T = {
@@ -72,12 +73,6 @@ const T = {
   },
 }
 
-const STAGES = {
-  tr: { kabul: 'Kabul', tasarim: 'Tasarım', uretim: 'Üretim', porselen: 'Porselen', kalite: 'Kalite', prova: 'Prova', sevkiyat: 'Sevkiyat', teslim: 'Teslim' },
-  en: { kabul: 'Intake', tasarim: 'Design', uretim: 'Production', porselen: 'Porcelain', kalite: 'Quality', prova: 'Try-in', sevkiyat: 'Shipping', teslim: 'Delivery' },
-  ar: { kabul: 'الاستلام', tasarim: 'التصميم', uretim: 'التصنيع', porselen: 'البورسلين', kalite: 'الجودة', prova: 'التجربة', sevkiyat: 'الشحن', teslim: 'التسليم' },
-}
-
 // Barkod içeriği: adres (?scan=1042), "GD-1042" ya da sadece "1042" olabilir.
 function parseCaseNo(text) {
   const s = String(text).trim()
@@ -87,7 +82,7 @@ function parseCaseNo(text) {
   return m ? Number(m[1]) : null
 }
 
-function buildView(res, t, st, no) {
+function buildView(res, t, st, no) {  // st: (kod) => görünen aşama adı
   if (!res || typeof res !== 'object') return { tone: 'err', title: t.net, lines: [] }
   if (!res.ok) {
     const m = {
@@ -100,10 +95,10 @@ function buildView(res, t, st, no) {
     }
     return { tone: 'err', title: m[res.code] || res.message || t.net, lines: [] }
   }
-  const stage = st[res.stage] || res.stage
+  const stage = st(res.stage)
   if (res.action === 'alindi') return { tone: 'ok', title: t.taken(stage), lines: [t.takenHint] }
   if (res.delivered) return { tone: 'done', title: t.delivered, lines: [t.stageDone(stage)] }
-  return { tone: 'done', title: t.finished(stage), lines: [t.nextStage(st[res.next_stage] || res.next_stage)] }
+  return { tone: 'done', title: t.finished(stage), lines: [t.nextStage(st(res.next_stage))] }
 }
 
 const TONE = {
@@ -112,15 +107,17 @@ const TONE = {
   err: { bg: '#fdecec', fg: '#7f1d1d', bar: '#dc2626' },
 }
 
-export default function ScanPage({ lang = 'tr', onClose }) {
+export default function ScanPage({ lang = 'tr', stageNames = null, onClose }) {
   const t = T[lang] || T.tr
-  const st = STAGES[lang] || STAGES.tr
+  const st = k => stageLabel(k, lang, stageNames)
   const [view, setView] = useState(null)
   const [camError, setCamError] = useState(false)
   const [manual, setManual] = useState('')
   const busyRef = useRef(false)
   const langRef = useRef(lang)
   langRef.current = lang
+  const namesRef = useRef(stageNames)
+  namesRef.current = stageNames
 
   async function handleCode(text) {
     if (busyRef.current) return
@@ -131,7 +128,7 @@ export default function ScanPage({ lang = 'tr', onClose }) {
     const { data, error } = await supabase.rpc('scan_case', { p_case_no: no })
     const L = langRef.current
     const res = error ? null : data
-    const v = buildView(res, T[L] || T.tr, STAGES[L] || STAGES.tr, no)
+    const v = buildView(res, T[L] || T.tr, k => stageLabel(k, L, namesRef.current), no)
 
     if (navigator.vibrate) navigator.vibrate(v.tone === 'err' ? [80, 60, 80] : 120)
     setView({ ...v, caseInfo: res?.case || null })
