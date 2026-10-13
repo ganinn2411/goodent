@@ -415,3 +415,106 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
 /* Sayfa en az ekran boyu kadar olsun; son panel kalan boşluğu doldursun */
 .page{min-height:calc(100vh - 64px);min-height:calc(100dvh - 64px)}
 .page>.panel.grow{flex:1}
+/* =====================================================================
+   TEMA ANAHTARI (🌙 / ☀️) — üst çubuk ve giriş ekranı
+   ===================================================================== */
+.auth-lang{display:flex;gap:8px;align-items:center}
+.theme{display:inline-flex;gap:2px;padding:3px;border-radius:12px;background:var(--glass-2);border:1px solid var(--line);flex:none}
+.theme button{border:0;background:none;width:32px;height:30px;border-radius:9px;cursor:pointer;font-size:15px;line-height:1;
+  opacity:.55;transition:opacity .15s,background .15s,box-shadow .15s}
+.theme button:hover{opacity:.9}
+.theme button.on{opacity:1;background:rgba(56,189,248,.22);box-shadow:inset 0 1px 0 rgba(255,255,255,.12)}
+
+/* =====================================================================
+   AÇIK TEMA — html[data-theme=light]
+   Koyu tema varsayılan; burada sadece değişkenler ve sabit yazılmış renkler ezilir.
+   ===================================================================== */
+:root[data-theme=light]{
+  color-scheme:light;
+  --bg:#eef3fb; --bg2:#dfe8f7;
+  --card:rgba(255,255,255,.82);
+  --glass:rgba(15,23,42,.04);
+  --glass-2:rgba(15,23,42,.07);
+  --line:rgba(15,23,42,.11);
+  --line-2:rgba(15,23,42,.20);
+  --ink:#0f172a;
+  --mut:#5a6785;
+  --side:rgba(255,255,255,.80);
+  --acc:#0284c7; --acc-2:#2563eb;
+  --ok:#059669; --bad:#dc2626; --warn:#d97706;
+  --shadow:0 1px 0 rgba(255,255,255,.9) inset,0 18px 40px -22px rgba(30,41,90,.30);
+}
+[data-theme=light] *{scrollbar-color:#b6c2dd transparent}
+[data-theme=light] body{
+  background:
+    radial-gradient(900px 520px at 88% -8%,rgba(56,189,248,.28),transparent 62%),
+    radial-gradient(760px 480px at -8% 104%,rgba(99,102,241,.16),transparent 60%),
+    linear-gradient(180deg,var(--bg),var(--bg2));
+  background-attachment:fixed;
+}
+[data-theme=light] ::selection{background:rgba(2,132,199,.25)}
+[data-theme=light] option{background:#fff;color:var(--ink)}
+
+/* yan menü + üst çubuk */
+[data-theme=light] .side,[data-theme=light] .side button{color:#475569}
+[data-theme=light] .logo{color:var(--ink)}
+[data-theme=light] .side button:hover{color:var(--ink)}
+[data-theme=light] .side button.on{
+  color:#0369a1;border-color:rgba(2,132,199,.35);
+  background:linear-gradient(135deg,rgba(56,189,248,.24),rgba(59,130,246,.12));
+  box-shadow:0 6px 18px -10px rgba(2,132,199,.5);
+}
+[data-theme=light] .top{background:rgba(255,255,255,.70)}
+[data-theme=light] .av{box-shadow:0 0 0 2px #fff,0 6px 16px rgba(56,189,248,.35)}
+[data-theme=light] .theme button.on{background:#fff;box-shadow:0 1px 4px rgba(15,23,42,.18)}
+
+/* kartlar */
+[data-theme=light] .stat b{color:color-mix(in srgb,var(--c) 78%,#0f172a);text-shadow:none}
+[data-theme=light] .stat::after{opacity:.35}
+[data-theme=light] .hero{color:var(--ink);background-color:rgba(255,255,255,.80);
+  box-shadow:var(--shadow),0 0 60px -30px rgba(56,189,248,.5)}
+[data-theme=light] .hero p{color:var(--mut)}
+[data-theme=light] .bar div{background:rgba(15,23,42,.08)}
+[data-theme=light] .steps i{background:rgba(15,23,42,.12)}
+[data-theme=light] .dot{background:rgba(15,23,42,.18)}
+[data-theme=light] .pill{color:#0369a1;background:rgba(2,132,199,.10);border-color:rgba(2,132,199,.25)}
+[data-theme=light] .pill.g{color:#047857;background:rgba(5,150,105,.10);border-color:rgba(5,150,105,.28)}
+[data-theme=light] .pill.r{color:#b91c1c;background:rgba(220,38,38,.09);border-color:rgba(220,38,38,.28)}
+[data-theme=light] .pill.y{color:#a16207;background:rgba(217,119,6,.11);border-color:rgba(217,119,6,.30)}
+[data-theme=light] tr.clk:hover{background:rgba(2,132,199,.07)}
+
+/* form alanları */
+[data-theme=light] input,[data-theme=light] select,[data-theme=light] textarea{background:rgba(255,255,255,.85)}
+[data-theme=light] input::placeholder,[data-theme=light] textarea::placeholder{color:#7a869f}
+[data-theme=light] input:focus,[data-theme=light] select:focus,[data-theme=light] textarea:focus{background:#fff;box-shadow:0 0 0 3px rgba(2,132,199,.18)}
+
+/* pencere */
+[data-theme=light] .ov{background:rgba(15,23,42,.42)}
+[data-theme=light] .modal{background-color:rgba(255,255,255,.96);
+  box-shadow:0 40px 80px -30px rgba(15,23,42,.45),0 1px 0 #fff inset}
+
+/* giriş / şifre sıfırlama ekranı */
+[data-theme=light] .login{background:radial-gradient(700px 400px at 30% 40%,rgba(56,189,248,.28),transparent 60%),linear-gradient(135deg,var(--bg),#cfdcf5)}
+[data-theme=light] .auth{color:var(--ink);
+  background:
+    radial-gradient(700px 440px at 50% 14%,rgba(56,189,248,.30),transparent 65%),
+    radial-gradient(560px 360px at 88% 92%,rgba(99,102,241,.20),transparent 70%),
+    linear-gradient(160deg,#f3f7ff,#d9e6fb)}
+[data-theme=light] .lg-hero{color:var(--ink)}
+[data-theme=light] .lg-hero p,[data-theme=light] .auth-hero p{color:var(--mut)}
+[data-theme=light] .auth-card{background-color:rgba(255,255,255,.80);
+  box-shadow:0 30px 60px -30px rgba(30,41,90,.35),0 0 80px -40px rgba(56,189,248,.5),0 1px 0 #fff inset}
+[data-theme=light] .auth-tabs{background:rgba(15,23,42,.05)}
+[data-theme=light] .auth-tabs button.on{background:rgba(2,132,199,.14);color:#0369a1;box-shadow:none}
+[data-theme=light] .auth-link{color:#0369a1}
+[data-theme=light] .auth-msg.bad{color:#b91c1c}
+[data-theme=light] .auth-msg.ok{color:#047857}
+
+/* telefon: çekmece menü ve iş kartları */
+@media(max-width:900px){
+  [data-theme=light] .side{background-color:rgba(255,255,255,.97)}
+  [data-theme=light] .scrim{background:rgba(15,23,42,.40)}
+}
+@media(max-width:700px){
+  [data-theme=light] table.jobs tr.clk{box-shadow:0 10px 24px -16px rgba(30,41,90,.35)}
+}
