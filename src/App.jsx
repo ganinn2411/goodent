@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react'
+import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
 import { supabase as sb } from './supabase'
@@ -610,16 +610,31 @@ const dg = s => String(s).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).repla
 const toDisp = v => /^\d{4}-\d{2}-\d{2}$/.test(v || '') ? v.slice(8) + '.' + v.slice(5, 7) + '.' + v.slice(0, 4) : ''
 
 function DateInput({ value, onChange, style }) {
-  const [t, setT] = useState(toDisp(value)), own = useRef(false)
-  useEffect(() => { if (own.current) { own.current = false; return } setT(toDisp(value)) }, [value])
+  const [t, setT] = useState(toDisp(value)), [bad, setBad] = useState(false), own = useRef(false), ref = useRef(null), caret = useRef(null)
+  useEffect(() => { if (own.current) { own.current = false; return } setT(toDisp(value)); setBad(false) }, [value])
+  // Biçimlendirme sonrası imleci, yazılan rakamın hemen sonrasına geri koy (ortadan düzenleme bozulmasın)
+  useLayoutEffect(() => {
+    const n = caret.current, el = ref.current
+    if (n == null || !el) return
+    caret.current = null
+    let p = 0, seen = 0
+    while (p < t.length && seen < n) { if (/\d/.test(t[p])) seen++; p++ }
+    el.setSelectionRange(p, p)
+  }, [t])
   const ch = e => {
-    const d = dg(e.target.value).slice(0, 8)
+    const raw = e.target.value, pos = e.target.selectionStart ?? raw.length
+    let d = dg(raw), before = Math.min(dg(raw.slice(0, pos)).length, 8)
+    // Dolu tarihin ortasına rakam yazılırsa araya sokma, üzerine yaz (rakamlar kaymasın)
+    if (d.length > 8 && before < d.length) d = d.slice(0, before) + d.slice(before + 1)
+    d = d.slice(0, 8)
     const s = d.length > 4 ? d.slice(0, 2) + '.' + d.slice(2, 4) + '.' + d.slice(4) : d.length > 2 ? d.slice(0, 2) + '.' + d.slice(2) : d
     const iso = d.length === 8 ? `${d.slice(4)}-${d.slice(2, 4)}-${d.slice(0, 2)}` : ''
-    const valid = iso && !isNaN(new Date(iso)) && new Date(iso).toISOString().slice(0, 10) === iso
-    setT(s); own.current = true; onChange(valid ? iso : '')
+    // Geçerli takvim günü ve makul yıl (1900-2100): 0262 gibi yıllar kabul edilmez
+    const y = Number(d.slice(4)), valid = iso && y >= 1900 && y <= 2100 && !isNaN(new Date(iso)) && new Date(iso).toISOString().slice(0, 10) === iso
+    caret.current = Math.min(before, d.length)
+    setT(s); setBad(d.length === 8 && !valid); own.current = true; onChange(valid ? iso : '')
   }
-  return <input inputMode="numeric" placeholder="GG.AA.YYYY" value={t} onChange={ch} style={style} />
+  return <input ref={ref} inputMode="numeric" placeholder="GG.AA.YYYY" value={t} onChange={ch} aria-invalid={bad || undefined} style={bad ? { ...style, borderColor: '#ef4444', boxShadow: '0 0 0 2px #ef444455' } : style} />
 }
 function TimeInput({ value, onChange }) {
   const [t, setT] = useState(value || '')
