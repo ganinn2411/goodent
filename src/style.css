@@ -518,3 +518,28 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
 @media(max-width:700px){
   [data-theme=light] table.jobs tr.clk{box-shadow:0 10px 24px -16px rgba(30,41,90,.35)}
 }
+
+/* =====================================================================
+   YAN MENÜ HER EKRANDA GİZLİ — ☰ ile açılır (masaüstü dahil)
+   Telefondaki çekmece davranışının aynısı; ≥901px için tekrarlanır.
+   ===================================================================== */
+@media(min-width:901px){
+  .app{grid-template-columns:minmax(0,1fr)}
+  .side{
+    position:fixed;top:0;bottom:0;left:0;right:auto;margin:0;height:auto;
+    width:290px;border-radius:0 24px 24px 0;z-index:30;
+    background-color:rgba(9,14,30,.94);
+    transform:translateX(-105%);transition:transform .25s ease;
+    padding:18px 12px;
+  }
+  .side button{padding:12px}
+  [dir=rtl] .side{left:auto;right:0;border-radius:24px 0 0 24px;transform:translateX(105%)}
+  .side.open,[dir=rtl] .side.open{transform:none}
+  .scrim{display:block;position:fixed;inset:0;z-index:25;background:rgba(3,6,15,.6);backdrop-filter:blur(3px)}
+  .burger{display:grid;place-items:center;width:40px;height:40px;border-radius:12px;background:var(--glass-2);
+    border:1px solid var(--line);font-size:20px;flex:none;cursor:pointer}
+  .top{justify-content:flex-start}
+  .user{margin-inline-start:auto}
+  [data-theme=light] .side{background-color:rgba(255,255,255,.97)}
+  [data-theme=light] .scrim{background:rgba(15,23,42,.40)}
+}
