@@ -850,6 +850,21 @@ function Invoice({ rows, acc, from, to, lab, onClose }) {
   const sum = (c, t) => L.filter(r => r.currency === c && r.type === t).reduce((x, r) => x + Number(r.amount), 0)
   const bal = c => L.filter(r => r.currency === c).reduce((x, r) => x + sg[r.type] * Number(r.amount), 0)
   const dd = d => d ? toDisp(d) : '…'
+  // Windows .exe (Electron): ana pencereyi window.print() ile yazdırmak boş çıkıyor.
+  // Faturayı (ekranda çevrilmiş hâliyle) ayrı bir A4 sayfası yapıp gizli pencerede PDF'e çevirir.
+  const printInv = () => {
+    const el = document.querySelector('.print-area')
+    if (!(window.goodent && window.goodent.printHtml && el)) return window.print()
+    const css = '@page{size:A4}*{box-sizing:border-box}body{margin:0;font-family:"Segoe UI",Arial,Tahoma,sans-serif;color:#0f172a;font-size:12px;line-height:1.5}'
+      + 'h2{margin:0}small{color:#475569}.inv-h{display:flex;justify-content:space-between;gap:12px;border-bottom:2px solid #cbd5e1;padding-bottom:10px;margin-bottom:12px}'
+      + '.inv-c{margin:12px 0}table{width:100%;border-collapse:collapse}thead{display:table-header-group}tr{page-break-inside:avoid}'
+      + 'th{text-align:start;color:#475569;font-weight:600;font-size:11px;padding:7px 6px;border-bottom:1px solid #cbd5e1}td{padding:8px 6px;border-bottom:1px solid #e2e8f0}'
+      + '.inv-t{margin-top:12px;padding:10px 12px;background:#f1f5ff;border:1px solid #cbd5e1;border-radius:8px;line-height:1.7;page-break-inside:avoid}.empty{text-align:center;color:#64748b;padding:20px}'
+    const html = '<!doctype html><html dir="' + (document.documentElement.dir || 'ltr') + '" lang="' + document.documentElement.lang + '"><head><meta charset="utf-8"><title>Fatura</title><style>' + css + '</style></head><body>' + el.outerHTML + '</body></html>'
+    window.goodent.printHtml(html, { paper: 'a4', name: 'fatura' })
+      .then(r => { if (r && !r.ok) notify(r.reason || 'PDF açılamadı') })
+      .catch(e => notify(e?.message || e))
+  }
   return <Modal title="Fatura / Ekstre" onClose={onClose}>
     <div className="print-area inv">
       <div className="inv-h"><div><h2>{lab}</h2><small>Fatura / Hesap Ekstresi</small></div><div style={{ textAlign:'end' }}><b>{dd(from)} — {dd(to)}</b><br /><small>{toDisp(today())}</small></div></div>
@@ -859,7 +874,7 @@ function Invoice({ rows, acc, from, to, lab, onClose }) {
       {!L.length && <p className="empty">Kayıt yok</p>}
       {cur.map(c => <div className="inv-t" key={c}>{['satis_faturasi', 'tahsilat', 'alis_faturasi', 'odeme', 'gider'].filter(t => sum(c, t)).map(t => <div key={t}>{TX[t]}: {money(sum(c, t))} {c}</div>)}<b>Bakiye ({c}): {money(bal(c))}</b></div>)}
     </div>
-    <br /><button className="btn btn-p" onClick={() => window.print()}>🖨 Yazdır / PDF</button></Modal>
+    <br /><button className="btn btn-p" onClick={printInv}>🖨 Yazdır / PDF</button></Modal>
 }
 
 function ThemePick() {
