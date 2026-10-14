@@ -620,3 +620,5 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
   .set-tabs button{padding:9px 13px}
   .set-actions .btn{flex:1 1 auto}
 }
+
+.set-actions .saved{align-self:center;color:var(--ok);font-weight:600;font-size:13px}
