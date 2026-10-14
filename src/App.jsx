@@ -167,7 +167,8 @@ function trAttr(el, D) {
 function useTr(lang) {
   useEffect(() => {
     const D = DICT[lang] || null; document.documentElement.dir = lang === 'ar' ? 'rtl' : 'ltr'; document.documentElement.lang = lang
-    const root = document.getElementById('root')
+    // Modal / DialogHost pencereleri createPortal ile document.body'ye çizilir (#root dışı); hepsini çevirmek için body izlenir
+    const root = document.body
     const walk = n => { if (n.nodeType === 3) return trNode(n, D); if (n.nodeType !== 1) return
       if (n.hasAttribute('placeholder')) trAttr(n, D); n.childNodes.forEach(walk) }
     walk(root)
