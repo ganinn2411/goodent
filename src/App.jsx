@@ -688,8 +688,8 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
     setMic(Object.fromEntries(menuItems.map(([k]) => [k, (settings.menu_icons || {})[k] || ''])))
   }, [lang, JSON.stringify([settings.menu_names || {}, settings.menu_icons || {}])])
   async function saveMenu(reset) {
-    const names = reset ? {} : Object.fromEntries(menuItems.map(([k, , d]) => [k, (mnm[k] || '').trim()]).filter(([k, v]) => v && v !== d))
-    const icons = reset ? {} : Object.fromEntries(menuItems.map(([k, i]) => [k, (mic[k] || '').trim()]).filter(([k, v]) => v && v !== i))
+    const names = reset ? {} : Object.fromEntries(menuItems.map(([k, , d]) => [k, (mnm[k] || '').trim(), d]).filter(([, v, d]) => v && v !== d).map(([k, v]) => [k, v]))
+    const icons = reset ? {} : Object.fromEntries(menuItems.map(([k, i]) => [k, (mic[k] || '').trim(), i]).filter(([, v, i]) => v && v !== i).map(([k, v]) => [k, v]))
     if (!(await saveSet('menu_names', { ...(settings.menu_names || {}), [lang]: names }))) return false
     return saveSet('menu_icons', icons)
   }
