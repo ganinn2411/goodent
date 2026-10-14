@@ -38,7 +38,10 @@ applyTheme(getTheme())
 let SN = {}
 // Yan menü adları / simgeleri: yöneticinin Ayarlar > "Menü adları" bölümünde girdiği özel değerler (yoksa varsayılan)
 let MN = {}, MI = {}
-const navL = (k, d) => ((MN[LANG] || {})[k] || '').trim() || d
+const navL = (k, d) => {
+  const get = l => ((MN[l] || {})[k] || '').trim()
+  return get(LANG) || get('tr') || get('en') || get('ar') || d
+}
 const navI = (k, d) => (MI[k] || '').trim() || d
 const stg = k => stageLabel(k, LANG, SN)
 const CS = { acik:'Açık', laboratuvarda:'Laboratuvarda', provada:'Provada', teslim_edildi:'Teslim edildi', iptal:'İptal' }
