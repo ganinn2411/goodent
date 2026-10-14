@@ -40,33 +40,54 @@ function createWindow() {
   win.on('closed', () => { win = null })
 }
 
-// Etiket yazdırma (50x30 mm): gizli pencerede HTML'i açıp yazdırır
-ipcMain.handle('print-html', (_e, html) =>
+// Yazdırma: HTML'i gizli pencerede PDF'e çevirip PDF görüntüleyicide açar.
+//   opts.paper === 'a4'  -> fatura / ekstre (A4, kenar boşluklu, çok sayfalı)
+//   aksi halde           -> etiket (50x30 mm; boyutu HTML içindeki CSS @page belirler)
+ipcMain.handle('print-html', (_e, html, opts) =>
   new Promise((resolve) => {
+    const a4 = !!opts && opts.paper === 'a4'
+    const name = String((opts && opts.name) || (a4 ? 'fatura' : 'etiket')).replace(/[^a-z0-9_-]/gi, '') || 'yazdir'
+    const stamp = Date.now()
+    // A4 belgeler uzun olabilir (data: adresi ~2 MB ile sınırlı), bu yüzden geçici dosyadan yükle
+    const tmpHtml = a4 ? path.join(app.getPath('temp'), `goodent-${name}-${stamp}.html`) : null
+    if (a4) fs.writeFileSync(tmpHtml, html, 'utf8')
+
     const w = new BrowserWindow({ show: false, webPreferences: { sandbox: true } })
-    w.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+    if (a4) w.loadFile(tmpHtml)
+    else w.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
+
     w.webContents.once('did-finish-load', async () => {
       try {
-        // QR resmi tamamen çözülsün
+        // Resimler (QR vb.) tamamen çözülsün
         await w.webContents.executeJavaScript(
           'Promise.all([...document.images].map(i => i.decode ? i.decode().catch(() => {}) : Promise.resolve()))'
         )
         await new Promise((r) => setTimeout(r, 300))
-        // Sürücü sayfa boyutunu bozmasın diye önce 50x30 mm PDF üret (CSS @page boyutu geçerli)
-        const pdf = await w.webContents.printToPDF({
-          preferCSSPageSize: true,
-          printBackground: true,
-          margins: { marginType: 'none' },
-        })
-        const file = path.join(app.getPath('temp'), `goodent-etiket-${Date.now()}.pdf`)
+        const pdf = await w.webContents.printToPDF(
+          a4
+            ? {
+                pageSize: 'A4',
+                printBackground: true,
+                // marginType 'custom' değerleri inç cinsindendir (0.55 inç ≈ 14 mm)
+                margins: { marginType: 'custom', top: 0.55, bottom: 0.55, left: 0.55, right: 0.55 },
+              }
+            : {
+                // Sürücü sayfa boyutunu bozmasın diye önce 50x30 mm PDF üret (CSS @page boyutu geçerli)
+                preferCSSPageSize: true,
+                printBackground: true,
+                margins: { marginType: 'none' },
+              }
+        )
+        const file = path.join(app.getPath('temp'), `goodent-${name}-${stamp}.pdf`)
         fs.writeFileSync(file, pdf)
-        // PDF görüntüleyicide açılır: etiketi görürsün, oradan yazıcıya gönderirsin
+        // PDF görüntüleyicide açılır: oradan yazıcıya gönderir ya da kaydedersin
         const err = await shell.openPath(file)
         resolve({ ok: !err, reason: err || '' })
       } catch (e) {
         resolve({ ok: false, reason: String(e) })
       } finally {
         w.close()
+        if (tmpHtml) fs.unlink(tmpHtml, () => {})
       }
     })
   })
