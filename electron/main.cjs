@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, shell, Menu, ipcMain } = require('electron')
+const { app, BrowserWindow, session, shell, Menu, ipcMain, dialog } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
@@ -9,6 +9,56 @@ if (!gotLock) {
 }
 
 let win = null
+
+// ---- Otomatik güncelleme (electron-updater) ----
+// Güncelleme adresi package.json > build.publish içinde tanımlıdır.
+// Açılışta ve her 30 dakikada bir kontrol eder. Yeni sürüm varsa uygulamanın içinde
+// "Yeni sürüm var" çubuğu çıkar; kullanıcı "Güncelle"ye basınca indirilir, kurulur ve uygulama yeniden açılır.
+let updLast = null
+function sendUpdate(p) {
+  updLast = p
+  if (win && !win.isDestroyed()) win.webContents.send('update', p)
+}
+
+function setupAutoUpdate() {
+  if (!app.isPackaged) return // geliştirme modunda çalışmasın
+  let autoUpdater
+  try {
+    ;({ autoUpdater } = require('electron-updater'))
+  } catch (e) {
+    console.error('electron-updater bulunamadı:', e.message)
+    return
+  }
+
+  autoUpdater.autoDownload = false // kullanıcı "Güncelle"ye basana kadar indirme
+  autoUpdater.autoInstallOnAppQuit = false
+
+  autoUpdater.on('update-available', (i) => sendUpdate({ state: 'available', version: i.version }))
+  autoUpdater.on('update-not-available', () => sendUpdate({ state: 'none' }))
+  autoUpdater.on('download-progress', (p) => sendUpdate({ state: 'downloading', percent: Math.round(p.percent) }))
+  autoUpdater.on('update-downloaded', () => {
+    sendUpdate({ state: 'installing' })
+    setTimeout(() => autoUpdater.quitAndInstall(false, true), 800) // kur ve yeniden aç
+  })
+  autoUpdater.on('error', (e) => {
+    console.error('Güncelleme hatası:', e && e.message)
+    sendUpdate({ state: 'error', message: String((e && e.message) || e) })
+  })
+
+  const check = () => autoUpdater.checkForUpdates().catch(() => {})
+
+  // Arayüz açılınca son durumu tekrar gönder (çubuk kaybolmasın), yoksa kontrol et
+  ipcMain.handle('update:check', () => {
+    if (updLast && updLast.state !== 'none') { sendUpdate(updLast); return }
+    return check()
+  })
+  ipcMain.handle('update:download', () =>
+    autoUpdater.downloadUpdate().catch((e) => sendUpdate({ state: 'error', message: String(e) }))
+  )
+
+  check()
+  setInterval(check, 30 * 60 * 1000)
+}
 
 function createWindow() {
   win = new BrowserWindow({
@@ -82,6 +132,7 @@ if (gotLock) app.whenReady().then(() => {
   )
 
   createWindow()
+  setupAutoUpdate()
 
   app.on('activate', () => {
     if (BrowserWindow.getAllWindows().length === 0) createWindow()
