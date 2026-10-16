@@ -622,3 +622,7 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
 }
 
 .set-actions .saved{align-self:center;color:var(--ok);font-weight:600;font-size:13px}
+
+/* Giriş ekranı: "Beni hatırla" / kabul koşulları onay kutusu */
+.auth-card .auth-chk{flex-direction:row;align-items:center;gap:10px;font-weight:500;font-size:13px;color:var(--ink);cursor:pointer;user-select:none}
+.auth-card .auth-chk input{width:18px;height:18px;padding:0;flex:none;cursor:pointer}
