@@ -272,7 +272,7 @@ function Recovery({ lang, setL, hasSession, onDone }) {
 function Shell({ user, lang, setL }) {
   const [page, setPage] = useState(() => sessionStorage.getItem('pendingScan') ? 'tara' : 'dash'), [menu, setMenu] = useState(false), [jf, setJf] = useState(null)
   const [cases, setCases] = useState([]), [staff, setStaff] = useState([]), [me, setMe] = useState(null), [settings, setSettings] = useState({})
-  const busy = useRef(false)
+  const busy = useRef(false), retry = useRef(0)
   const load = useCallback(async () => {
     if (busy.current) return          // aynı anda iki yükleme olmasın
     busy.current = true
@@ -282,6 +282,9 @@ function Shell({ user, lang, setL }) {
         sb.from('profiles').select('id,full_name,role').eq('active', true),
         sb.from('profiles').select('*').eq('id', user.id).single(),
         sb.from('app_settings').select('*')])
+      // Bağlantı/sunucu hatasında 5 sn, 10 sn, 20 sn... (en fazla 60 sn) sonra kendiliğinden tekrar dene
+      if (c.error || m.error) { retry.current = Math.min((retry.current || 2.5) * 2, 60); setTimeout(() => { busy.current = false; load() }, retry.current * 1000) }
+      else retry.current = 0
       if (c.data) setCases(c.data)    // hata olursa eski liste kalsın (ekran boşalmasın)
       if (p.data) setStaff(p.data)
       if (m.data) setMe(m.data)
