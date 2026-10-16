@@ -72,7 +72,7 @@ ipcMain.handle('print-html', (_e, html) =>
   })
 )
 
-app.whenReady().then(() => {
+if (gotLock) app.whenReady().then(() => {
   // Kamera (barkod/QR okutma) izni
   session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
     cb(['media', 'camera', 'mediaKeySystem'].includes(permission))
