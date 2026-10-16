@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { Html5Qrcode, Html5QrcodeSupportedFormats } from 'html5-qrcode'
-import { supabase } from './supabase'
-import { stageLabel } from './stages'
+import { supabase } from '../lib/supabase'
+import { stageLabel } from '../lib/stages'
 
 // Uygulamanın diliyle aynı: tr / en / ar
 const T = {
