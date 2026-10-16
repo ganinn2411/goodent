@@ -6,7 +6,7 @@
 // (SUPABASE_URL ve SUPABASE_SERVICE_ROLE_KEY otomatik tanımlıdır.)
 
 import { createClient } from 'npm:@supabase/supabase-js@2'
-import { SMTPClient } from 'https://deno.land/x/denomailer@1.6.0/mod.ts'
+import nodemailer from 'npm:nodemailer@6.9.16'
 
 const cors = {
   'Access-Control-Allow-Origin': '*',
@@ -114,13 +114,20 @@ Deno.serve(async (req) => {
     options: body.redirectTo ? { redirectTo: body.redirectTo } : undefined,
   })
   const link = data?.properties?.action_link
-  if (error || !link) return json({ ok: true })
+  if (error || !link) {
+    console.error('generate_link_failed', error)
+    return json({ ok: true })
+  }
 
   // Secret'ları oku; baştaki/sondaki boşluk ve tırnakları temizle
   const env = (k: string) => (Deno.env.get(k) ?? '').trim().replace(/^["']|["']$/g, '')
   const host = env('SMTP_HOST'), user = env('SMTP_USER'), pass = env('SMTP_PASS').replace(/\s+/g, '')
   const from = env('SMTP_FROM') || user
-  const port = Number(env('SMTP_PORT') || '465')
+  // Arapça/Farsça rakamlarla yazılmış değerleri (٤٦٥ gibi) Latin rakama çevir
+  const latin = (v: string) => v
+    .replace(/[٠-٩]/g, (d) => String(d.charCodeAt(0) - 1632))
+    .replace(/[۰-۹]/g, (d) => String(d.charCodeAt(0) - 1776))
+  const port = Number(latin(env('SMTP_PORT')) || '465') || 465
   const missing = Object.entries({ SMTP_HOST: host, SMTP_USER: user, SMTP_PASS: pass }).filter(([, v]) => !v).map(([k]) => k)
   if (missing.length) {
     console.error('missing_secrets: ' + missing.join(', '))
@@ -128,20 +135,24 @@ Deno.serve(async (req) => {
   }
 
   try {
-    const client = new SMTPClient({
-      connection: { hostname: host, port, tls: port === 465, auth: { username: user, password: pass } },
+    const transporter = nodemailer.createTransport({
+      host,
+      port,
+      secure: port === 465,
+      auth: { user, pass },
     })
-    await client.send({
+    await transporter.sendMail({
       from,
       to: email,
       subject: T[lang].subject,
-      content: 'auto',
+      text: `${T[lang].title}\n\n${T[lang].body}\n\n${link}\n\n${T[lang].ignore}`,
       html: buildHtml(lang, email, link),
     })
-    await client.close()
+    transporter.close()
   } catch (e) {
     console.error('smtp_failed', e)
-    return json({ ok: false, error: 'send_failed' }, 500)
+    // GEÇİCİ: hatayı bulduktan sonra aşağıdaki detail alanını silin
+    return json({ ok: false, error: 'send_failed', detail: String(e), host, port, user }, 500)
   }
 
   return json({ ok: true })
