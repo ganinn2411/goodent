@@ -53,8 +53,8 @@ const ROLE_DEF = {
 let RN = {}, LANG = 'tr'
 const rn = r => (RN[LANG] || {})[r] || ROLE_DEF[LANG][r] || r
 const DEF = { receptionist:['isler','gorev','randevu','stok'], designer:['isler','gorev'], technician:['isler','gorev','stok'], ceramist:['isler','gorev'], qc:['isler','gorev'], accountant:['stat'] }
-const today = () => new Date().toISOString().slice(0, 10)
-const fmt = d => d ? new Date(d).toLocaleString('tr-TR', { dateStyle:'short', timeStyle:'short' }) : '—'
+const today = () => { const d = new Date(); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10) }
+const fmt = d => d ? new Date(d).toLocaleString(LANG === 'tr' ? 'tr-TR' : 'en-GB', { dateStyle:'short', timeStyle:'short' }) : '—'
 const money = n => Number(n || 0).toLocaleString('tr-TR', { minimumFractionDigits:2 })
 const stages = c => [...(c.case_stages || [])].sort((a, b) => a.seq - b.seq)
 const done = c => ['teslim_edildi','iptal'].includes(c.status)
@@ -111,8 +111,8 @@ const AR = {
 'Satış faturası':'فاتورة مبيعات','Alış faturası':'فاتورة مشتريات','Tahsilat':'تحصيل','Ödeme':'دفع','Gider':'مصروف',
 'Zirkon':'زركون','Rezin':'ريزن','Veneer':'فينير','Geçici Protez':'تركيبة مؤقتة','Gece Plağı':'واقي ليلي','Implant Üstü':'فوق الزرعة',
 'admin':'مدير','receptionist':'استقبال','designer':'مصمم','technician':'فني','ceramist':'سيراميست','qc':'مراقبة الجودة','accountant':'محاسب',
-'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.':'تم التسجيل، يمكنك الدخول.',
-'Şifremi unuttum':'نسيت كلمة المرور','Sıfırlama bağlantısını gönder':'إرسال رابط إعادة التعيين','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'اكتب بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'تم إرسال الرابط إلى بريدك الإلكتروني. تحقق من صندوق الوارد (والرسائل غير المرغوبة).','Yeni şifre belirle':'تعيين كلمة مرور جديدة','Yeni şifre (tekrar)':'كلمة المرور الجديدة (تكرار)','Şifreyi kaydet':'حفظ كلمة المرور','Şifre en az 6 karakter olmalı':'يجب ألا تقل كلمة المرور عن 6 أحرف','Şifreler aynı değil':'كلمتا المرور غير متطابقتين','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'تم تغيير كلمة المرور. جارٍ تحويلك إلى شاشة الدخول…','Şifre değişti. Yeni şifrenle giriş yap.':'تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'خطأ في الاتصال. تحقق من الإنترنت وحاول مرة ثانية.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'خطأ في الاتصال. تحقق من الإنترنت وحاول مرة ثانية.',
+'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.':'تم التسجيل. يمكنك استخدام التطبيق بعد موافقة المدير على حسابك.',
+'Şifremi unuttum':'نسيت كلمة المرور','Sıfırlama bağlantısını gönder':'إرسال رابط إعادة التعيين','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'اكتب بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'تم إرسال الرابط إلى بريدك الإلكتروني. تحقق من صندوق الوارد (والرسائل غير المرغوبة).','Yeni şifre belirle':'تعيين كلمة مرور جديدة','Yeni şifre (tekrar)':'كلمة المرور الجديدة (تكرار)','Şifreyi kaydet':'حفظ كلمة المرور','Şifre en az 6 karakter olmalı':'يجب ألا تقل كلمة المرور عن 6 أحرف','Şifreler aynı değil':'كلمتا المرور غير متطابقتين','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'تم تغيير كلمة المرور. جارٍ تحويلك إلى شاشة الدخول…','Şifre değişti. Yeni şifrenle giriş yap.':'تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'خطأ في الاتصال. تحقق من الإنترنت وحاول مرة ثانية.',
 'Açık işler':'الأعمال المفتوحة','Geciken işler':'الأعمال المتأخرة','Bugün teslim':'تسليم اليوم','Bu ay teslim edilen':'المسلَّم هذا الشهر','Aşamalara göre işler':'الأعمال حسب المرحلة','İş türü dağılımı':'توزيع أنواع العمل','Personel yükü':'عبء الموظفين','Bugün teslim / geciken':'تسليم اليوم / المتأخر','Gecikti':'متأخر','Bugün':'اليوم','Veri yok':'لا توجد بيانات','Atanmamış':'غير معيّن','Bugün teslim veya geciken iş yok 🎉':'لا توجد أعمال متأخرة أو تسلَّم اليوم 🎉',
 'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','Eklenme':'تاريخ الإضافة','Çıkış':'خروج','Kaydedildi':'تم الحفظ','Roller ve yetkiler':'الأدوار والصلاحيات','Menü ve adlar':'القائمة والأسماء','Tüm verilerin bir kopyasını JSON dosyası olarak indirir.':'تنزيل نسخة من جميع البيانات كملف JSON.','Menü adları':'أسماء القائمة','Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.':'الأسماء والرموز الظاهرة في القائمة اليسرى. تُحفظ الأسماء للغة المختارة والرموز لجميع اللغات. الحقل الفارغ يستخدم الاسم الافتراضي. يمكنك كتابة أي إيموجي للرمز.','✏ Düzenle':'✏ تعديل','🗑 Sil':'🗑 حذف','İşi düzenle':'تعديل العمل','Vazgeç':'إلغاء','Tamam':'موافق','🗑 Evet, sil':'🗑 نعم، احذف','İşi sil':'حذف العمل','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'سيتم حذف هذا العمل بمراحله وملفاته نهائيًا. لا يمكن التراجع عن هذا الإجراء.','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد','Personeli sil':'حذف الموظف','Oturum geçersiz':'الجلسة غير صالحة','Çıkış yap':'تسجيل الخروج','Oturumun sunucuda geçersiz olmuş, bu yüzden değişiklik yapılamadı.':'الجلسة لم تعد صالحة على الخادم، لذلك تعذّر إجراء التغيير.','Çıkış yapıp tekrar giriş yapman gerekiyor. Şimdi çıkış yapılsın mı?':'عليك تسجيل الخروج ثم الدخول من جديد. هل تريد تسجيل الخروج الآن؟','E-postayı değiştir':'تغيير البريد الإلكتروني','Geçerli bir e-posta adresi yaz':'اكتب عنوان بريد إلكتروني صحيحًا','Bu zaten mevcut e-posta adresin':'هذا هو بريدك الإلكتروني الحالي بالفعل','Onay bağlantısı gönderildi. E-postadaki bağlantıya tıklayınca adres değişir (eski ve yeni adresi kontrol et).':'تم إرسال رابط التأكيد. يتغيّر البريد بعد الضغط على الرابط في الرسالة (تحقق من البريد القديم والجديد).','Bu personel silinecek ve artık giriş yapamayacak. Geçmiş kayıtlar korunur.':'سيتم حذف هذا الموظف ولن يتمكن من تسجيل الدخول بعد الآن. السجلات السابقة محفوظة.',
 '— yeni doktor —':'— طبيب جديد —','Yeni doktor adı':'اسم الطبيب الجديد','Hasta adı':'اسم المريض','İş türü':'نوع العمل','Diş numaraları':'أرقام الأسنان','Renk':'اللون','Teslim tarihi':'تاريخ التسليم','Not':'ملاحظة','Kaydet':'حفظ','Fiyat (TL)':'السعر (TL)',
@@ -134,8 +134,8 @@ const EN = {
 'Satış faturası':'Sales invoice','Alış faturası':'Purchase invoice','Tahsilat':'Collection','Ödeme':'Payment','Gider':'Expense',
 'Zirkon':'Zirconia','Rezin':'Resin','Veneer':'Veneer','Geçici Protez':'Temporary prosthesis','Gece Plağı':'Night guard','Implant Üstü':'Implant crown',
 'Yönetici':'Admin','Resepsiyon':'Reception','Tasarımcı':'Designer','Teknisyen':'Technician','Seramist':'Ceramist','Kalite Kontrol':'Quality control','Muhasebe':'Accountant',
-'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.':'Registered, you can sign in now.',
-'Şifremi unuttum':'Forgot password','Sıfırlama bağlantısını gönder':'Send reset link','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'Enter your email and we will send you a password reset link.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'Link sent to your email. Check your inbox (and spam folder).','Yeni şifre belirle':'Set a new password','Yeni şifre (tekrar)':'New password (repeat)','Şifreyi kaydet':'Save password','Şifre en az 6 karakter olmalı':'Password must be at least 6 characters','Şifreler aynı değil':'Passwords do not match','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'Password changed. Redirecting to sign in…','Şifre değişti. Yeni şifrenle giriş yap.':'Password changed. Sign in with your new password.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'The link is invalid or expired. Request a new one.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'Connection error. Check the internet and try again.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'Connection error. Check the internet and try again.',
+'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.':'Registered. You can use the app once the manager approves your account.',
+'Şifremi unuttum':'Forgot password','Sıfırlama bağlantısını gönder':'Send reset link','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'Enter your email and we will send you a password reset link.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'Link sent to your email. Check your inbox (and spam folder).','Yeni şifre belirle':'Set a new password','Yeni şifre (tekrar)':'New password (repeat)','Şifreyi kaydet':'Save password','Şifre en az 6 karakter olmalı':'Password must be at least 6 characters','Şifreler aynı değil':'Passwords do not match','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'Password changed. Redirecting to sign in…','Şifre değişti. Yeni şifrenle giriş yap.':'Password changed. Sign in with your new password.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'The link is invalid or expired. Request a new one.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'Connection error. Check the internet and try again.',
 'Açık işler':'Open jobs','Geciken işler':'Late jobs','Bugün teslim':'Due today','Bu ay teslim edilen':'Delivered this month','Aşamalara göre işler':'Jobs by stage','İş türü dağılımı':'Job type distribution','Personel yükü':'Staff workload','Bugün teslim / geciken':'Due today / late','Gecikti':'Late','Bugün':'Today','Veri yok':'No data','Atanmamış':'Unassigned','Bugün teslim veya geciken iş yok 🎉':'Nothing due today or late 🎉',
 'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','Eklenme':'Added','Çıkış':'Sign out','Kaydedildi':'Saved','Roller ve yetkiler':'Roles & permissions','Menü ve adlar':'Menu & names','Tüm verilerin bir kopyasını JSON dosyası olarak indirir.':'Downloads a copy of all data as a JSON file.','Menü adları':'Menu names','Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.':'Names and icons shown in the left menu. Names are saved for the selected language, icons for all languages. Empty fields use the default. You can type any emoji as an icon.','✏ Düzenle':'✏ Edit','🗑 Sil':'🗑 Delete','İşi düzenle':'Edit job','Vazgeç':'Cancel','Tamam':'OK','🗑 Evet, sil':'🗑 Yes, delete','İşi sil':'Delete job','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'This job will be PERMANENTLY deleted together with its stages and files. This cannot be undone.','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake','Personeli sil':'Delete staff member','Oturum geçersiz':'Session invalid','Çıkış yap':'Sign out','Oturumun sunucuda geçersiz olmuş, bu yüzden değişiklik yapılamadı.':'Your session is no longer valid on the server, so the change could not be made.','Çıkış yapıp tekrar giriş yapman gerekiyor. Şimdi çıkış yapılsın mı?':'You need to sign out and sign in again. Sign out now?','E-postayı değiştir':'Change email','Geçerli bir e-posta adresi yaz':'Enter a valid email address','Bu zaten mevcut e-posta adresin':'This is already your current email','Onay bağlantısı gönderildi. E-postadaki bağlantıya tıklayınca adres değişir (eski ve yeni adresi kontrol et).':'Confirmation link sent. The email changes after you click the link (check both old and new addresses).','Bu personel silinecek ve artık giriş yapamayacak. Geçmiş kayıtlar korunur.':'This staff member will be removed and can no longer sign in. Past records are kept.',
 '— yeni doktor —':'— new doctor —','Yeni doktor adı':'New doctor name','Hasta adı':'Patient name','İş türü':'Job type','Diş numaraları':'Tooth numbers','Renk':'Shade','Teslim tarihi':'Due date','Not':'Note','Kaydet':'Save','Fiyat (TL)':'Price (TL)',
@@ -272,10 +272,11 @@ function Recovery({ lang, setL, hasSession, onDone }) {
 function Shell({ user, lang, setL }) {
   const [page, setPage] = useState(() => sessionStorage.getItem('pendingScan') ? 'tara' : 'dash'), [menu, setMenu] = useState(false), [jf, setJf] = useState(null)
   const [cases, setCases] = useState([]), [staff, setStaff] = useState([]), [me, setMe] = useState(null), [settings, setSettings] = useState({})
-  const busy = useRef(false), retry = useRef(0)
+  const busy = useRef(false), retry = useRef(0), rt = useRef(null)
   const load = useCallback(async () => {
     if (busy.current) return          // aynı anda iki yükleme olmasın
     busy.current = true
+    clearTimeout(rt.current)
     try {
       const [c, p, m, st] = await Promise.all([
         sb.from('cases').select('*, patients(full_name), doctors(full_name), case_stages(*)').is('deleted_at', null).order('due_date'),
@@ -283,7 +284,7 @@ function Shell({ user, lang, setL }) {
         sb.from('profiles').select('*').eq('id', user.id).single(),
         sb.from('app_settings').select('*')])
       // Bağlantı/sunucu hatasında 5 sn, 10 sn, 20 sn... (en fazla 60 sn) sonra kendiliğinden tekrar dene
-      if (c.error || m.error) { retry.current = Math.min((retry.current || 2.5) * 2, 60); setTimeout(() => { busy.current = false; load() }, retry.current * 1000) }
+      if (c.error || m.error) { retry.current = Math.min((retry.current || 2.5) * 2, 60); rt.current = setTimeout(() => { busy.current = false; load() }, retry.current * 1000) }
       else retry.current = 0
       if (c.data) setCases(c.data)    // hata olursa eski liste kalsın (ekran boşalmasın)
       if (p.data) setStaff(p.data)
@@ -304,7 +305,7 @@ function Shell({ user, lang, setL }) {
       .on('postgres_changes', { event: '*', schema: 'public', table: 'cases' }, onChange)
       .on('postgres_changes', { event: '*', schema: 'public', table: 'case_stages' }, onChange)
       .subscribe()
-    return () => { clearInterval(timer); clearTimeout(deb); document.removeEventListener('visibilitychange', tick); sb.removeChannel(ch) }
+    return () => { clearInterval(timer); clearTimeout(deb); clearTimeout(rt.current); document.removeEventListener('visibilitychange', tick); sb.removeChannel(ch) }
   }, [load])
   useEffect(() => { document.body.classList.toggle('noscroll', menu); return () => document.body.classList.remove('noscroll') }, [menu])
   const name = id => staff.find(s => s.id === id)?.full_name || '—'
@@ -434,18 +435,27 @@ function Jobs({ cases, staff, name, load, user, me, init }) {
 }
 
 function NewCase({ onDone }) {
-  const [docs, setDocs] = useState([]), [f, setF] = useState({ doctor_id:'', newDoctor:'', patient:'', work_type:WORK[0], tooth_numbers:'', shade:'', due_date:'', notes:'' })
+  const [docs, setDocs] = useState([]), [f, setF] = useState({ doctor_id:'', newDoctor:'', patient:'', work_type:WORK[0], tooth_numbers:'', shade:'', due_date:'', notes:'' }), [busy, setBusy] = useState(false)
   const set = k => e => setF({ ...f, [k]: e.target.value })
   useEffect(() => { sb.from('doctors').select('id,full_name').is('deleted_at', null).then(r => setDocs(r.data || [])) }, [])
   async function save() {
-    if (!f.patient || (!f.doctor_id && !f.newDoctor)) return notify('Doktor ve hasta adı gerekli')
-    let did = f.doctor_id
-    if (!did) { const d = await sb.from('doctors').insert({ full_name: f.newDoctor }).select().single(); if (d.error) return notify(d.error.message); did = d.data.id }
-    const p = await sb.from('patients').insert({ full_name: f.patient }).select().single(); if (p.error) return notify(p.error.message)
-    const c = await sb.from('cases').insert({ doctor_id: did, patient_id: p.data.id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null }).select().single()
-    if (c.error) return notify(c.error.message)
-    printCaseLabel({ case_no: c.data.case_no, patient: f.patient, doctor: f.doctor_id ? docs.find(d => d.id === f.doctor_id)?.full_name : f.newDoctor, work_type: f.work_type, tooth_numbers: f.tooth_numbers, due_date: f.due_date }).catch(() => {})
-    onDone()
+    if (busy) return
+    const pat = f.patient.trim(), nd = f.newDoctor.trim()
+    if (!pat || (!f.doctor_id && !nd)) return notify('Doktor ve hasta adı gerekli')
+    setBusy(true)
+    const now = () => new Date().toISOString()
+    let newDocId = null
+    try {
+      let did = f.doctor_id
+      if (!did) { const d = await sb.from('doctors').insert({ full_name: nd }).select().single(); if (d.error) return notify(d.error.message); did = newDocId = d.data.id }
+      const undo = async pid => { if (pid) await sb.from('patients').update({ deleted_at: now() }).eq('id', pid); if (newDocId) await sb.from('doctors').update({ deleted_at: now() }).eq('id', newDocId) }
+      const p = await sb.from('patients').insert({ full_name: pat }).select().single()
+      if (p.error) { await undo(null); return notify(p.error.message) }
+      const c = await sb.from('cases').insert({ doctor_id: did, patient_id: p.data.id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null }).select().single()
+      if (c.error) { await undo(p.data.id); return notify(c.error.message) }
+      printCaseLabel({ case_no: c.data.case_no, patient: pat, doctor: f.doctor_id ? docs.find(d => d.id === f.doctor_id)?.full_name : nd, work_type: f.work_type, tooth_numbers: f.tooth_numbers, due_date: f.due_date }).catch(() => {})
+      onDone()
+    } finally { setBusy(false) }
   }
   return <><div className="fg">
     <label>Doktor<select value={f.doctor_id} onChange={set('doctor_id')}><option value="">— yeni doktor —</option>{docs.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></label>
@@ -456,7 +466,7 @@ function NewCase({ onDone }) {
     <label>Renk<input value={f.shade} onChange={set('shade')} /></label>
     <label>Teslim tarihi<DateInput value={f.due_date} onChange={v => setF({ ...f, due_date: v })} /></label>
     <label className="w">Not<textarea rows="3" value={f.notes} onChange={set('notes')} /></label></div>
-    <button className="btn btn-p" onClick={save}>Kaydet</button></>
+    <button className="btn btn-p" onClick={save} disabled={busy}>Kaydet</button></>
 }
 
 function EditCase({ c, onDone }) {
@@ -504,7 +514,7 @@ function Stok({ me, name, user }) {
     <Crud key={av} title="Stok" table="inventory_items" view="stock_levels" soft={false} order={['name', true]} add="Yeni malzeme"
       cols={[{ k:'name', label:'Malzeme' }, { k:'brand', label:'Marka' }, { label:'Miktar', r: r => <span className={'pill ' + (r.low ? 'r' : 'g')}>{Number(r.qty)}</span> }, { k:'min_level', label:'Min.' }]}
       fields={[{ k:'name', label:'Malzeme adı', required:true, w:1 }, { k:'brand', label:'Marka' }, { k:'min_level', label:'Minimum stok', type:'number', def:0 }]}
-      extra={(r, reload) => <><button className="btn btn-g" onClick={() => setPre({ item_id: r.id, item_name: r.name })}>📝 İste</button><button className="btn btn-g" onClick={async () => { const q = await askPrompt('Miktar (giriş: 5, çıkış: -2)'); if (!q || isNaN(q)) return; const { error } = await sb.from('stock_movements').insert({ item_id:r.id, qty:Number(q) }); if (error) notify(error.message); reload() }}>± Hareket</button></>} />
+      extra={(r, reload) => <><button className="btn btn-g" onClick={() => setPre({ item_id: r.id, item_name: r.name })}>📝 İste</button><button className="btn btn-g" onClick={async () => { const raw = await askPrompt('Miktar (giriş: 5, çıkış: -2)'); const q = raw == null ? '' : String(raw).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776).replace(/[٫,]/g, '.').replace(/[−–]/g, '-').trim(); if (!q || isNaN(q) || Number(q) === 0) return; if (Number(r.qty) + Number(q) < 0 && !(await askConfirm('Stok eksiye düşecek. Devam edilsin mi?'))) return; const { error } = await sb.from('stock_movements').insert({ item_id:r.id, qty:Number(q) }); if (error) notify(error.message); reload() }}>± Hareket</button></>} />
     <MatReq me={me} name={name} user={user} pre={pre} clearPre={() => setPre(null)} onStock={() => setAv(v => v + 1)} />
   </>
 }
@@ -533,9 +543,13 @@ function MatReq({ me, name, user, pre, clearPre, onStock }) {
   async function setStatus(r, status) {
     const { error } = await sb.from('material_requests').update({ status, handled_by: user.id }).eq('id', r.id)
     if (error) return notify(error.message)
-    if (status === 'geldi' && r.item_id && (await askConfirm(`Stoğa giriş yapılsın mı? (+${r.qty} ${r.item_name})`))) {
-      const m = await sb.from('stock_movements').insert({ item_id: r.item_id, qty: Number(r.qty), note: 'Malzeme talebi' })
-      if (m.error) notify(m.error.message); else onStock()
+    if (status === 'geldi' && r.status !== 'geldi' && r.item_id) {
+      const tag = `Malzeme talebi #${r.id}`   // aynı talep ikinci kez stoğa eklenmesin
+      const dup = await sb.from('stock_movements').select('id').eq('note', tag).limit(1)
+      if (!(dup.data || []).length && (await askConfirm(`Stoğa giriş yapılsın mı? (+${r.qty} ${r.item_name})`))) {
+        const m = await sb.from('stock_movements').insert({ item_id: r.item_id, qty: Number(r.qty), note: tag })
+        if (m.error) notify(m.error.message); else onStock()
+      }
     }
     load()
   }
@@ -563,7 +577,7 @@ function MatReq({ me, name, user, pre, clearPre, onStock }) {
 
 function Team({ cases, staff, me, load }) {
   const active = cases.filter(c => !done(c)).flatMap(c => stages(c).filter(s => s.status === 'devam').map(s => ({ c, s })))
-  const role = async (id, r) => { await sb.from('profiles').update({ role: r }).eq('id', id); load() }
+  const role = async (id, r) => { const { error } = await sb.from('profiles').update({ role: r }).eq('id', id); if (error) notify(error.message); load() }
   const [pend, setPend] = useState([])
   const loadPend = useCallback(async () => {
     if (me?.role !== 'admin') return
@@ -588,7 +602,7 @@ function Team({ cases, staff, me, load }) {
       <button className="btn btn-p" onClick={() => approve(p, true)}>Onayla</button><button className="btn btn-g" onClick={() => approve(p, false)}>Reddet</button></div>)}</div>}
   <div className="cols">{staff.map(p => { const w = active.filter(a => a.s.assigned_to === p.id)
     return <div className="panel" key={p.id}><div className="ph"><div className="av">{p.full_name[0].toUpperCase()}</div><h3>{p.full_name}</h3><span className={'pill ' + (w.length ? 'y' : 'g')}>{w.length ? w.length + ' iş' : 'Boşta'}</span>{me?.role === 'admin' && p.id !== me.id && <button className="btn btn-g btn-del" onClick={() => del(p)}>🗑 Sil</button>}</div>
-      {me?.role === 'admin' ? <select value={p.role} onChange={e => role(p.id, e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{rn(r)}</option>)}</select> : <span className="pill">{rn(p.role)}</span>}
+      {me?.role === 'admin' ? <select value={p.role} disabled={p.id === me.id} onChange={e => role(p.id, e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{rn(r)}</option>)}</select> : <span className="pill">{rn(p.role)}</span>}
       {w.map(({ c, s }) => <p key={s.id}><small>#{c.case_no} · {stg(s.stage)} · {c.work_type}</small></p>)}</div> })}</div></>
 }
 
