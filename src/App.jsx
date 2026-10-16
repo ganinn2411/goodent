@@ -613,16 +613,22 @@ function Team({ cases, staff, me, load }) {
     setPend(data || [])
   }, [me?.role])
   useEffect(() => { loadPend() }, [loadPend])
+  // Giriş hesabını (Supabase Auth) tamamen siler: Edge Function 'delete-user' (yalnızca admin)
+  const rmUser = async id => {
+    const { data, error } = await sb.functions.invoke('delete-user', { body: { id } })
+    if (error || !data?.ok) { notify(data?.error || error?.message || 'Silinemedi'); return false }
+    return true
+  }
   const approve = async (p, ok) => {
-    const { error } = await sb.from('profiles').update(ok ? { active: true } : { deleted_at: new Date().toISOString() }).eq('id', p.id)
-    if (error) return notify(error.message)
+    if (ok) {
+      const { error } = await sb.from('profiles').update({ active: true }).eq('id', p.id)
+      if (error) return notify(error.message)
+    } else if (!(await rmUser(p.id))) return
     loadPend(); load()
   }
-  // Personeli sil: kayıt gerçekten silinmez (soft delete), giriş yetkisi kalkar, geçmiş kayıtlar korunur
   const del = async p => {
     if (!(await askConfirm(`${p.full_name}\nBu personel silinecek ve artık giriş yapamayacak. Geçmiş kayıtlar korunur.`, { title: 'Personeli sil', ok: '🗑 Evet, sil', danger: true }))) return
-    const { error } = await sb.from('profiles').update({ active: false, deleted_at: new Date().toISOString() }).eq('id', p.id)
-    if (error) return notify(error.message)
+    if (!(await rmUser(p.id))) return
     load()
   }
   return <>{pend.length > 0 && <div className="panel" style={{ marginBottom: 14 }}><div className="ph"><h3>⏳ Onay bekleyen hesaplar ({pend.length})</h3></div>
