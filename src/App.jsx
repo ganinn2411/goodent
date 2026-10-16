@@ -371,6 +371,7 @@ function Shell({ user, lang, setL }) {
     <div className="main">
       <div className="top"><button className="burger" onClick={() => setMenu(!menu)}>☰</button><h2>{navL(cur, NAV.find(n => n[0] === cur)[2])}</h2>
         <div className="user"><ThemePick /><LangPick lang={lang} setL={setL} /><span className="uname">{me?.full_name}</span><div className="av">{(me?.full_name || '?')[0].toUpperCase()}</div></div></div>
+      <UpdateBanner />
       <div className="page" key={cur}>{pages[cur]}</div>
     </div></div>
 }
@@ -989,6 +990,33 @@ function CaseQR({ no }) {
   const [src, setSrc] = useState('')
   useEffect(() => { let on = true; caseQrUrl(no, 240).then(u => on && setSrc(u)).catch(() => {}); return () => { on = false } }, [no])
   return src ? <div style={{ display: 'flex', alignItems: 'center', gap: 12, margin: '10px 0' }}><img src={src} alt="QR" width="120" height="120" style={{ background: '#fff', border: '1px solid #e5e9f2', borderRadius: 8 }} /><b>#{no}</b></div> : null
+}
+
+// Windows uygulaması: yeni sürüm bildirimi (electron-updater). Tarayıcıda / telefonda görünmez.
+const UPD = {
+  tr: { avail: v => `Yeni sürüm var (${v})`, btn: 'Güncelle', down: p => `İndiriliyor… %${p}`, inst: 'Kuruluyor, uygulama yeniden açılacak…', err: 'Güncelleme başarısız. Daha sonra tekrar deneyin.' },
+  en: { avail: v => `New version available (${v})`, btn: 'Update', down: p => `Downloading… ${p}%`, inst: 'Installing, the app will restart…', err: 'Update failed. Please try again later.' },
+  ar: { avail: v => `يتوفر إصدار جديد (${v})`, btn: 'تحديث', down: p => `جارٍ التنزيل… ${p}%`, inst: 'جارٍ التثبيت، سيُعاد تشغيل التطبيق…', err: 'فشل التحديث. حاول لاحقًا.' },
+}
+function UpdateBanner() {
+  const g = window.goodent
+  const [u, setU] = useState(null)
+  useEffect(() => {
+    if (!g?.onUpdate) return
+    const off = g.onUpdate(setU)
+    g.checkUpdate?.()
+    return () => { off?.() }
+  }, [])
+  if (!u || !['available', 'downloading', 'installing', 'error'].includes(u.state)) return null
+  const t = UPD[LANG] || UPD.tr
+  const busy = u.state === 'downloading' || u.state === 'installing'
+  const msg = u.state === 'available' ? t.avail(u.version) : u.state === 'downloading' ? t.down(u.percent || 0) : u.state === 'installing' ? t.inst : t.err
+  return <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '10px 14px 0', padding: '10px 14px', borderRadius: 12, background: u.state === 'error' ? '#7f1d1d' : '#1d4ed8', color: '#fff', fontWeight: 600 }}>
+    <span style={{ flex: 1 }}>{u.state === 'error' ? '⚠️' : '⬇️'} {msg}</span>
+    {u.state === 'available' && <button className="btn" style={{ background: '#fff', color: '#1d4ed8' }} onClick={() => { setU({ state: 'downloading', percent: 0 }); g.downloadUpdate() }}>{t.btn}</button>}
+    {u.state === 'downloading' && <div style={{ width: '100%', height: 6, borderRadius: 3, background: '#ffffff44' }}><div style={{ width: (u.percent || 0) + '%', height: '100%', borderRadius: 3, background: '#fff' }} /></div>}
+    {u.state === 'error' && <button className="btn" style={{ background: '#fff', color: '#7f1d1d' }} onClick={() => setU(null)}>OK</button>}
+  </div>
 }
 
 export default function App() {
