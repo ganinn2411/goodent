@@ -2,10 +2,10 @@ import { useEffect, useLayoutEffect, useState, useCallback, useRef } from 'react
 import { createPortal } from 'react-dom'
 import * as THREE from 'three'
 import { RoomEnvironment } from 'three/examples/jsm/environments/RoomEnvironment.js'
-import { supabase as sb } from './supabase'
-import ScanPage from './ScanPage'
-import { printCaseLabel, caseQrUrl } from './printCaseLabel'
-import { STAGE_CODES, STAGE_DEF, STAGE_NAME_MAX, stageLabel } from './stages'
+import { supabase as sb } from './lib/supabase'
+import ScanPage from './pages/ScanPage'
+import { printCaseLabel, caseQrUrl } from './lib/printCaseLabel'
+import { STAGE_CODES, STAGE_DEF, STAGE_NAME_MAX, stageLabel } from './lib/stages'
 
 // Telefonun normal kamerasıyla okunan QR: https://site/?scan=1042
 // Numarayı sakla, adresi hemen temizle (sayfa yenilenince tekrar taranmasın).
@@ -111,7 +111,7 @@ const AR = {
 'Satış faturası':'فاتورة مبيعات','Alış faturası':'فاتورة مشتريات','Tahsilat':'تحصيل','Ödeme':'دفع','Gider':'مصروف',
 'Zirkon':'زركون','Rezin':'ريزن','Veneer':'فينير','Geçici Protez':'تركيبة مؤقتة','Gece Plağı':'واقي ليلي','Implant Üstü':'فوق الزرعة',
 'admin':'مدير','receptionist':'استقبال','designer':'مصمم','technician':'فني','ceramist':'سيراميست','qc':'مراقبة الجودة','accountant':'محاسب',
-'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam, giriş yapabilirsin.':'تم التسجيل، يمكنك الدخول.',
+'Yükleniyor…':'جارٍ التحميل…','Giriş':'دخول','Kayıt ol':'تسجيل','Yeni hesap':'حساب جديد','Girişe dön':'العودة للدخول','Ad Soyad':'الاسم الكامل','E-posta':'البريد الإلكتروني','Şifre':'كلمة المرور','Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.':'تم التسجيل، يمكنك الدخول.',
 'Şifremi unuttum':'نسيت كلمة المرور','Sıfırlama bağlantısını gönder':'إرسال رابط إعادة التعيين','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'اكتب بريدك الإلكتروني وسنرسل لك رابط إعادة تعيين كلمة المرور.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'تم إرسال الرابط إلى بريدك الإلكتروني. تحقق من صندوق الوارد (والرسائل غير المرغوبة).','Yeni şifre belirle':'تعيين كلمة مرور جديدة','Yeni şifre (tekrar)':'كلمة المرور الجديدة (تكرار)','Şifreyi kaydet':'حفظ كلمة المرور','Şifre en az 6 karakter olmalı':'يجب ألا تقل كلمة المرور عن 6 أحرف','Şifreler aynı değil':'كلمتا المرور غير متطابقتين','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'تم تغيير كلمة المرور. جارٍ تحويلك إلى شاشة الدخول…','Şifre değişti. Yeni şifrenle giriş yap.':'تم تغيير كلمة المرور. سجّل الدخول بكلمة المرور الجديدة.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'الرابط غير صالح أو منتهي الصلاحية. اطلب رابطًا جديدًا.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'خطأ في الاتصال. تحقق من الإنترنت وحاول مرة ثانية.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'خطأ في الاتصال. تحقق من الإنترنت وحاول مرة ثانية.',
 'Açık işler':'الأعمال المفتوحة','Geciken işler':'الأعمال المتأخرة','Bugün teslim':'تسليم اليوم','Bu ay teslim edilen':'المسلَّم هذا الشهر','Aşamalara göre işler':'الأعمال حسب المرحلة','İş türü dağılımı':'توزيع أنواع العمل','Personel yükü':'عبء الموظفين','Bugün teslim / geciken':'تسليم اليوم / المتأخر','Gecikti':'متأخر','Bugün':'اليوم','Veri yok':'لا توجد بيانات','Atanmamış':'غير معيّن','Bugün teslim veya geciken iş yok 🎉':'لا توجد أعمال متأخرة أو تسلَّم اليوم 🎉',
 'Ara: hasta, doktor, no…':'بحث: مريض، طبيب، رقم…','Hepsi':'الكل','＋ Yeni iş':'＋ عمل جديد','No':'الرقم','Hasta':'المريض','Doktor':'الطبيب','İş':'العمل','İlerleme':'التقدم','Sorumlu':'المسؤول','Eklenme':'تاريخ الإضافة','Çıkış':'خروج','Kaydedildi':'تم الحفظ','Roller ve yetkiler':'الأدوار والصلاحيات','Menü ve adlar':'القائمة والأسماء','Tüm verilerin bir kopyasını JSON dosyası olarak indirir.':'تنزيل نسخة من جميع البيانات كملف JSON.','Menü adları':'أسماء القائمة','Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.':'الأسماء والرموز الظاهرة في القائمة اليسرى. تُحفظ الأسماء للغة المختارة والرموز لجميع اللغات. الحقل الفارغ يستخدم الاسم الافتراضي. يمكنك كتابة أي إيموجي للرمز.','✏ Düzenle':'✏ تعديل','🗑 Sil':'🗑 حذف','İşi düzenle':'تعديل العمل','Vazgeç':'إلغاء','Tamam':'موافق','🗑 Evet, sil':'🗑 نعم، احذف','İşi sil':'حذف العمل','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'سيتم حذف هذا العمل بمراحله وملفاته نهائيًا. لا يمكن التراجع عن هذا الإجراء.','İş bulunamadı':'لا توجد أعمال','— atanmadı —':'— غير معيّن —','✔ Bitir':'✔ إنهاء','🗄 Arşivle':'🗄 أرشفة','Yeni iş kabul':'استلام عمل جديد','Personeli sil':'حذف الموظف','Oturum geçersiz':'الجلسة غير صالحة','Çıkış yap':'تسجيل الخروج','Oturumun sunucuda geçersiz olmuş, bu yüzden değişiklik yapılamadı.':'الجلسة لم تعد صالحة على الخادم، لذلك تعذّر إجراء التغيير.','Çıkış yapıp tekrar giriş yapman gerekiyor. Şimdi çıkış yapılsın mı?':'عليك تسجيل الخروج ثم الدخول من جديد. هل تريد تسجيل الخروج الآن؟','E-postayı değiştir':'تغيير البريد الإلكتروني','Geçerli bir e-posta adresi yaz':'اكتب عنوان بريد إلكتروني صحيحًا','Bu zaten mevcut e-posta adresin':'هذا هو بريدك الإلكتروني الحالي بالفعل','Onay bağlantısı gönderildi. E-postadaki bağlantıya tıklayınca adres değişir (eski ve yeni adresi kontrol et).':'تم إرسال رابط التأكيد. يتغيّر البريد بعد الضغط على الرابط في الرسالة (تحقق من البريد القديم والجديد).','Bu personel silinecek ve artık giriş yapamayacak. Geçmiş kayıtlar korunur.':'سيتم حذف هذا الموظف ولن يتمكن من تسجيل الدخول بعد الآن. السجلات السابقة محفوظة.',
@@ -134,7 +134,7 @@ const EN = {
 'Satış faturası':'Sales invoice','Alış faturası':'Purchase invoice','Tahsilat':'Collection','Ödeme':'Payment','Gider':'Expense',
 'Zirkon':'Zirconia','Rezin':'Resin','Veneer':'Veneer','Geçici Protez':'Temporary prosthesis','Gece Plağı':'Night guard','Implant Üstü':'Implant crown',
 'Yönetici':'Admin','Resepsiyon':'Reception','Tasarımcı':'Designer','Teknisyen':'Technician','Seramist':'Ceramist','Kalite Kontrol':'Quality control','Muhasebe':'Accountant',
-'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam, giriş yapabilirsin.':'Registered, you can sign in now.',
+'Yükleniyor…':'Loading…','Giriş':'Sign in','Kayıt ol':'Sign up','Yeni hesap':'New account','Girişe dön':'Back to sign in','Ad Soyad':'Full name','E-posta':'Email','Şifre':'Password','Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.':'Registered, you can sign in now.',
 'Şifremi unuttum':'Forgot password','Sıfırlama bağlantısını gönder':'Send reset link','E-posta adresini yaz, şifre sıfırlama bağlantısı gönderelim.':'Enter your email and we will send you a password reset link.','Bağlantı e-postana gönderildi. Gelen kutunu (ve spam klasörünü) kontrol et.':'Link sent to your email. Check your inbox (and spam folder).','Yeni şifre belirle':'Set a new password','Yeni şifre (tekrar)':'New password (repeat)','Şifreyi kaydet':'Save password','Şifre en az 6 karakter olmalı':'Password must be at least 6 characters','Şifreler aynı değil':'Passwords do not match','Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…':'Password changed. Redirecting to sign in…','Şifre değişti. Yeni şifrenle giriş yap.':'Password changed. Sign in with your new password.','Bağlantı geçersiz veya süresi dolmuş. Yeniden sıfırlama isteyin.':'The link is invalid or expired. Request a new one.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'Connection error. Check the internet and try again.','Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.':'Connection error. Check the internet and try again.',
 'Açık işler':'Open jobs','Geciken işler':'Late jobs','Bugün teslim':'Due today','Bu ay teslim edilen':'Delivered this month','Aşamalara göre işler':'Jobs by stage','İş türü dağılımı':'Job type distribution','Personel yükü':'Staff workload','Bugün teslim / geciken':'Due today / late','Gecikti':'Late','Bugün':'Today','Veri yok':'No data','Atanmamış':'Unassigned','Bugün teslim veya geciken iş yok 🎉':'Nothing due today or late 🎉',
 'Ara: hasta, doktor, no…':'Search: patient, doctor, no…','Hepsi':'All','＋ Yeni iş':'＋ New job','No':'No','Hasta':'Patient','Doktor':'Doctor','İş':'Job','İlerleme':'Progress','Sorumlu':'Assigned to','Eklenme':'Added','Çıkış':'Sign out','Kaydedildi':'Saved','Roller ve yetkiler':'Roles & permissions','Menü ve adlar':'Menu & names','Tüm verilerin bir kopyasını JSON dosyası olarak indirir.':'Downloads a copy of all data as a JSON file.','Menü adları':'Menu names','Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.':'Names and icons shown in the left menu. Names are saved for the selected language, icons for all languages. Empty fields use the default. You can type any emoji as an icon.','✏ Düzenle':'✏ Edit','🗑 Sil':'🗑 Delete','İşi düzenle':'Edit job','Vazgeç':'Cancel','Tamam':'OK','🗑 Evet, sil':'🗑 Yes, delete','İşi sil':'Delete job','Bu iş, aşamaları ve dosyalarıyla birlikte TAMAMEN silinecek. Bu işlem geri alınamaz.':'This job will be PERMANENTLY deleted together with its stages and files. This cannot be undone.','İş bulunamadı':'No jobs found','— atanmadı —':'— unassigned —','✔ Bitir':'✔ Finish','🗄 Arşivle':'🗄 Archive','Yeni iş kabul':'New job intake','Personeli sil':'Delete staff member','Oturum geçersiz':'Session invalid','Çıkış yap':'Sign out','Oturumun sunucuda geçersiz olmuş, bu yüzden değişiklik yapılamadı.':'Your session is no longer valid on the server, so the change could not be made.','Çıkış yapıp tekrar giriş yapman gerekiyor. Şimdi çıkış yapılsın mı?':'You need to sign out and sign in again. Sign out now?','E-postayı değiştir':'Change email','Geçerli bir e-posta adresi yaz':'Enter a valid email address','Bu zaten mevcut e-posta adresin':'This is already your current email','Onay bağlantısı gönderildi. E-postadaki bağlantıya tıklayınca adres değişir (eski ve yeni adresi kontrol et).':'Confirmation link sent. The email changes after you click the link (check both old and new addresses).','Bu personel silinecek ve artık giriş yapamayacak. Geçmiş kayıtlar korunur.':'This staff member will be removed and can no longer sign in. Past records are kept.',
@@ -215,7 +215,7 @@ function Login({ lang, setL, notice }) {
     }
     const r = up ? await sb.auth.signUp({ email: email.trim(), password: pw, options: { data: { full_name: name } } }) : await sb.auth.signInWithPassword({ email: email.trim(), password: pw })
     setBad(!!r.error)
-    setMsg(r.error ? r.error.message : up ? 'Kayıt tamam, giriş yapabilirsin.' : '')
+    setMsg(r.error ? r.error.message : up ? 'Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.' : '')
     setBusy(false)
   }
   const tab = u => { setUp(u); setFg(false); setMsg('') }
@@ -272,15 +272,37 @@ function Recovery({ lang, setL, hasSession, onDone }) {
 function Shell({ user, lang, setL }) {
   const [page, setPage] = useState(() => sessionStorage.getItem('pendingScan') ? 'tara' : 'dash'), [menu, setMenu] = useState(false), [jf, setJf] = useState(null)
   const [cases, setCases] = useState([]), [staff, setStaff] = useState([]), [me, setMe] = useState(null), [settings, setSettings] = useState({})
+  const busy = useRef(false)
   const load = useCallback(async () => {
-    const [c, p, m, st] = await Promise.all([
-      sb.from('cases').select('*, patients(full_name), doctors(full_name), case_stages(*)').is('deleted_at', null).order('due_date'),
-      sb.from('profiles').select('id,full_name,role').eq('active', true),
-      sb.from('profiles').select('*').eq('id', user.id).single(),
-      sb.from('app_settings').select('*')])
-    setCases(c.data || []); setStaff(p.data || []); setMe(m.data); setSettings(Object.fromEntries((st.data || []).map(d => [d.id, d.value])))
+    if (busy.current) return          // aynı anda iki yükleme olmasın
+    busy.current = true
+    try {
+      const [c, p, m, st] = await Promise.all([
+        sb.from('cases').select('*, patients(full_name), doctors(full_name), case_stages(*)').is('deleted_at', null).order('due_date'),
+        sb.from('profiles').select('id,full_name,role').eq('active', true),
+        sb.from('profiles').select('*').eq('id', user.id).single(),
+        sb.from('app_settings').select('*')])
+      if (c.data) setCases(c.data)    // hata olursa eski liste kalsın (ekran boşalmasın)
+      if (p.data) setStaff(p.data)
+      if (m.data) setMe(m.data)
+      if (st.data) setSettings(Object.fromEntries(st.data.map(d => [d.id, d.value])))
+    } finally { busy.current = false }
   }, [user.id])
-  useEffect(() => { load(); const t = setInterval(load, 30000); return () => clearInterval(t) }, [load])
+  // Yenileme: ilk açılışta, sekme tekrar görünür olunca, Realtime değişikliğinde (1.5 sn birleştirilir)
+  // ve yedek olarak ~60 sn'de bir (sadece sekme görünürken). Önceden herkes 30 sn'de bir yükleme yapıyordu.
+  useEffect(() => {
+    load()
+    const tick = () => { if (!document.hidden) load() }
+    const timer = setInterval(tick, 60000 + Math.random() * 20000)   // rastgele fark: istekler aynı ana yığılmasın
+    document.addEventListener('visibilitychange', tick)
+    let deb = null
+    const onChange = () => { clearTimeout(deb); deb = setTimeout(tick, 1500 + Math.random() * 1500) }
+    const ch = sb.channel('lab-sync')
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'cases' }, onChange)
+      .on('postgres_changes', { event: '*', schema: 'public', table: 'case_stages' }, onChange)
+      .subscribe()
+    return () => { clearInterval(timer); clearTimeout(deb); document.removeEventListener('visibilitychange', tick); sb.removeChannel(ch) }
+  }, [load])
   useEffect(() => { document.body.classList.toggle('noscroll', menu); return () => document.body.classList.remove('noscroll') }, [menu])
   const name = id => staff.find(s => s.id === id)?.full_name || '—'
   const rnRaw = settings.role_names || {}; RN = ROLES.some(k => k in rnRaw) ? { tr: rnRaw } : rnRaw; LANG = lang
@@ -303,6 +325,10 @@ function Shell({ user, lang, setL }) {
     kasa: <Kasa settings={settings} />,
     stok: <Stok me={me} name={name} user={user} />,
   }
+  if (me && me.active === false) return <div className="auth"><div className="auth-card">
+    <h3>⏳ Hesabın onay bekliyor</h3>
+    <p className="auth-msg">Kaydın alındı. Laboratuvar yöneticisi hesabını onayladığında uygulamayı kullanabilirsin.</p>
+    <button className="btn btn-p auth-go" onClick={() => sb.auth.signOut()}>Çıkış</button></div></div>
   return <div className="app">
     {menu && <div className="scrim" onClick={() => setMenu(false)} />}
     <aside className={'side ' + (menu ? 'open' : '')}>
@@ -535,6 +561,18 @@ function MatReq({ me, name, user, pre, clearPre, onStock }) {
 function Team({ cases, staff, me, load }) {
   const active = cases.filter(c => !done(c)).flatMap(c => stages(c).filter(s => s.status === 'devam').map(s => ({ c, s })))
   const role = async (id, r) => { await sb.from('profiles').update({ role: r }).eq('id', id); load() }
+  const [pend, setPend] = useState([])
+  const loadPend = useCallback(async () => {
+    if (me?.role !== 'admin') return
+    const { data } = await sb.from('profiles').select('id,full_name,created_at').eq('active', false).is('deleted_at', null).order('created_at')
+    setPend(data || [])
+  }, [me?.role])
+  useEffect(() => { loadPend() }, [loadPend])
+  const approve = async (p, ok) => {
+    const { error } = await sb.from('profiles').update(ok ? { active: true } : { deleted_at: new Date().toISOString() }).eq('id', p.id)
+    if (error) return notify(error.message)
+    loadPend(); load()
+  }
   // Personeli sil: kayıt gerçekten silinmez (soft delete), giriş yetkisi kalkar, geçmiş kayıtlar korunur
   const del = async p => {
     if (!(await askConfirm(`${p.full_name}\nBu personel silinecek ve artık giriş yapamayacak. Geçmiş kayıtlar korunur.`, { title: 'Personeli sil', ok: '🗑 Evet, sil', danger: true }))) return
@@ -542,10 +580,13 @@ function Team({ cases, staff, me, load }) {
     if (error) return notify(error.message)
     load()
   }
-  return <div className="cols">{staff.map(p => { const w = active.filter(a => a.s.assigned_to === p.id)
+  return <>{pend.length > 0 && <div className="panel" style={{ marginBottom: 14 }}><div className="ph"><h3>⏳ Onay bekleyen hesaplar ({pend.length})</h3></div>
+    {pend.map(p => <div key={p.id} style={{ display: 'flex', gap: 8, alignItems: 'center', padding: '6px 0' }}><b style={{ flex: 1 }}>{p.full_name}</b>
+      <button className="btn btn-p" onClick={() => approve(p, true)}>Onayla</button><button className="btn btn-g" onClick={() => approve(p, false)}>Reddet</button></div>)}</div>}
+  <div className="cols">{staff.map(p => { const w = active.filter(a => a.s.assigned_to === p.id)
     return <div className="panel" key={p.id}><div className="ph"><div className="av">{p.full_name[0].toUpperCase()}</div><h3>{p.full_name}</h3><span className={'pill ' + (w.length ? 'y' : 'g')}>{w.length ? w.length + ' iş' : 'Boşta'}</span>{me?.role === 'admin' && p.id !== me.id && <button className="btn btn-g btn-del" onClick={() => del(p)}>🗑 Sil</button>}</div>
       {me?.role === 'admin' ? <select value={p.role} onChange={e => role(p.id, e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{rn(r)}</option>)}</select> : <span className="pill">{rn(p.role)}</span>}
-      {w.map(({ c, s }) => <p key={s.id}><small>#{c.case_no} · {stg(s.stage)} · {c.work_type}</small></p>)}</div> })}</div>
+      {w.map(({ c, s }) => <p key={s.id}><small>#{c.case_no} · {stg(s.stage)} · {c.work_type}</small></p>)}</div> })}</div></>
 }
 
 function Modal({ title, onClose, children }) {
