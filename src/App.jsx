@@ -68,7 +68,36 @@ const dlg = o => new Promise(res => {
   if (dlgPush) return dlgPush({ ...o, res })
   res(o.type === 'confirm' ? window.confirm(o.msg) : o.type === 'prompt' ? window.prompt(o.msg, o.def) : (window.alert(o.msg), true))
 })
-const notify = msg => dlg({ type: 'alert', msg: String(msg) })
+// Supabase / tarayıcıdan gelen İngilizce hata mesajlarını seçili dile çevirir (eşleşme yoksa mesaj aynen kalır).
+// Sıra: [regex, Türkçe, Arapça]; $1 eşleşen sayıyı ekler. İngilizce arayüzde özgün mesaj gösterilir.
+const ERR = [
+  [/invalid login credentials/i, 'E-posta veya şifre hatalı.', 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'],
+  [/user already registered|already been registered/i, 'Bu e-posta ile zaten bir hesap var. Giriş yapmayı deneyin.', 'يوجد حساب بهذا البريد الإلكتروني بالفعل. جرّب تسجيل الدخول.'],
+  [/email not confirmed/i, 'E-posta adresi henüz doğrulanmamış. Gelen kutunuzdaki bağlantıya tıklayın.', 'لم يتم تأكيد البريد الإلكتروني بعد. اضغط على الرابط في بريدك.'],
+  [/password should be at least (\d+)/i, 'Şifre en az $1 karakter olmalı.', 'يجب ألا تقل كلمة المرور عن $1 أحرف.'],
+  [/new password should be different/i, 'Yeni şifre eskisiyle aynı olamaz.', 'يجب أن تختلف كلمة المرور الجديدة عن القديمة.'],
+  [/weak|easy to guess|pwned/i, 'Şifre çok zayıf. Daha güçlü bir şifre seçin.', 'كلمة المرور ضعيفة جدًا. اختر كلمة مرور أقوى.'],
+  [/signup requires a valid password/i, 'Geçerli bir şifre girin.', 'أدخل كلمة مرور صالحة.'],
+  [/unable to validate email|email address .* is invalid|invalid format/i, 'Geçerli bir e-posta adresi girin.', 'أدخل بريدًا إلكترونيًا صالحًا.'],
+  [/only request this after (\d+) seconds?/i, 'Güvenlik nedeniyle bu işlemi ancak $1 saniye sonra tekrar yapabilirsiniz.', 'لأسباب أمنية، يمكنك تكرار هذا الإجراء بعد $1 ثانية.'],
+  [/rate limit|too many requests/i, 'Çok fazla deneme yapıldı. Biraz bekleyip tekrar deneyin.', 'تمت محاولات كثيرة. انتظر قليلًا ثم حاول مجددًا.'],
+  [/signups? not allowed/i, 'Yeni kayıt şu anda kapalı.', 'التسجيل الجديد مغلق حاليًا.'],
+  [/token has expired|otp_expired|link is invalid or has expired/i, 'Bağlantının süresi dolmuş ya da geçersiz. Yeniden şifre sıfırlama isteyin.', 'انتهت صلاحية الرابط أو أنه غير صالح. اطلب إعادة تعيين كلمة المرور من جديد.'],
+  [/auth session missing|session_not_found|jwt expired|invalid jwt/i, 'Oturum süresi dolmuş. Lütfen yeniden giriş yapın.', 'انتهت الجلسة. يرجى تسجيل الدخول من جديد.'],
+  [/database error saving new user/i, 'Hesap oluşturulamadı. Lütfen tekrar deneyin.', 'تعذّر إنشاء الحساب. حاول مرة أخرى.'],
+  [/failed to send a request to the edge function|functionshttperror|functionsfetcherror/i, 'Sunucuya ulaşılamadı. Daha sonra tekrar deneyin.', 'تعذّر الوصول إلى الخادم. حاول لاحقًا.'],
+  [/failed to fetch|networkerror|load failed|network request failed/i, 'Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.', 'خطأ في الاتصال. تحقق من الإنترنت وحاول مرة أخرى.'],
+  [/row-level security|permission denied/i, 'Bu işlem için yetkiniz yok.', 'ليست لديك صلاحية لهذا الإجراء.'],
+  [/duplicate key value|already exists/i, 'Bu kayıt zaten var.', 'هذا السجل موجود بالفعل.'],
+  [/violates foreign key constraint/i, 'Bu kayıt başka kayıtlarla ilişkili olduğu için işlem yapılamadı.', 'تعذّر تنفيذ الإجراء لأن السجل مرتبط بسجلات أخرى.'],
+]
+const errTr = msg => {
+  const m0 = String(msg ?? ''), L = localStorage.getItem('lang') || LANG // giriş ekranında LANG henüz güncellenmemiş olabilir
+  if (L === 'en') return m0
+  for (const [re, tr, ar] of ERR) { const m = m0.match(re); if (m) return (L === 'ar' ? ar : tr).replace(/\$(\d)/g, (_, i) => m[i]) }
+  return m0
+}
+const notify = msg => dlg({ type: 'alert', msg: errTr(msg) })
 const askConfirm = (msg, o = {}) => dlg({ type: 'confirm', msg, ...o })     // o: { title, ok, danger }
 const askPrompt = (msg, def = '') => dlg({ type: 'prompt', msg, def })
 const dlgCancelValue = d => d.type === 'confirm' ? false : d.type === 'prompt' ? null : true
@@ -237,7 +266,7 @@ function Login({ lang, setL, notice }) {
       sessionStorage.setItem('sessionLive', '1')
     }
     setBad(!!r.error)
-    setMsg(r.error ? r.error.message : up ? 'Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.' : '')
+    setMsg(r.error ? errTr(r.error.message) : up ? 'Kayıt tamam. Yönetici onayladıktan sonra uygulamayı kullanabilirsin.' : '')
     setBusy(false)
   }
   const tab = u => { setUp(u); setFg(false); setMsg('') }
@@ -276,7 +305,7 @@ function Recovery({ lang, setL, hasSession, onDone }) {
     setBusy(true)
     const { error } = await sb.auth.updateUser({ password: pw })
     setBusy(false)
-    if (error) { setBad(true); return setMsg(error.message) }
+    if (error) { setBad(true); return setMsg(errTr(error.message)) }
     setBad(false); setMsg('Şifre değişti. Giriş ekranına yönlendiriliyorsunuz…')
     setTimeout(() => onDone('Şifre değişti. Yeni şifrenle giriş yap.'), 1200)
   }
