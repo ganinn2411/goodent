@@ -42,9 +42,6 @@ const navL = (k, d) => ((MN[LANG] || {})[k] || '').trim() || d
 const navI = (k, d) => (MI[k] || '').trim() || d
 // Menüden gizlenen sayfalar ve özel bağlantılar (admin ayarlı)
 const mHidden = st => Array.isArray(st?.menu_hidden) ? st.menu_hidden : []
-const mCustom = st => Array.isArray(st?.menu_custom) ? st.menu_custom : []
-const mcLabel = d => d.label?.[LANG] || d.label?.tr || Object.values(d.label || {}).find(Boolean) || ''
-const normUrl = u => { const t = String(u || '').trim(); if (!t) return ''; try { const x = new URL(/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : 'https://' + t); return /^https?:$/.test(x.protocol) ? x.href : '' } catch { return '' } }
 const stg = k => stageLabel(k, LANG, SN)
 const CS = { acik:'Açık', laboratuvarda:'Laboratuvarda', provada:'Provada', teslim_edildi:'Teslim edildi', iptal:'İptal' }
 const TX = { satis_faturasi:'Satış faturası', alis_faturasi:'Alış faturası', tahsilat:'Tahsilat', odeme:'Ödeme', gider:'Gider' }
@@ -187,24 +184,117 @@ const EN = {
 'Genel':'General','Laboratuvar adı':'Lab name','Hesabım':'My account','Yeni şifre':'New password','Şifreyi değiştir':'Change password','Yetkiler':'Permissions','Rol':'Role','Rol adları':'Role names','Yedek':'Backup','Yedek indir (JSON)':'Download backup (JSON)','Dil':'Language','Hoş geldin,':'Welcome,','Dental laboratuvar yönetim paneli':'Dental laboratory management panel','Dental Laboratuvar Yönetimi':'Dental Laboratory Management','Hangi rol hangi sayfayı görebilir. Kasa ve Cari sadece admin ile muhasebe rolüne açılabilir.':'Which role can see which page. Cash and Accounts can only be opened to admin and accountant roles.',
 'Tarih aralığı':'Date range','Tüm cariler':'All accounts','🧾 Fatura / Ekstre':'🧾 Invoice / Statement','Tümü':'All','🖨 Yazdır / PDF':'🖨 Print / PDF','Fatura / Ekstre':'Invoice / Statement','Fatura / Hesap Ekstresi':'Invoice / Account Statement',
 'Dosyalar':'Files','＋ Dosya yükle':'＋ Upload file','Dosya yok':'No files','👁 Aç':'👁 Open','GG.AA.YYYY':'DD.MM.YYYY','SS:DD':'HH:MM'}
-Object.assign(AR, { 'İş formu': 'نموذج العمل', 'İş formu: ek alanlar': 'نموذج العمل: حقول إضافية',
-  'Yeni iş ve düzenleme formuna kendi alanlarınızı ekleyin (örn. Aciliyet, Kutu no). Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.': 'أضف حقولك الخاصة إلى نموذج العمل الجديد والتعديل (مثل: الاستعجال، رقم العلبة). يُحفظ اسم الحقل للغة المختارة؛ لكتابة الاسم بلغة أخرى غيّر اللغة. في اللغة التي لا يوجد لها اسم يظهر الاسم الموجود.',
-  'Alan adı': 'اسم الحقل', 'Alan türü': 'نوع الحقل', 'Seçenekler (virgülle ayırın)': 'الخيارات (افصل بفاصلة)', 'Zorunlu': 'إلزامي', '＋ Alan ekle': '＋ إضافة حقل', 'Henüz ek alan yok': 'لا توجد حقول إضافية بعد',
-  'Metin': 'نص', 'Uzun metin': 'نص طويل', 'Sayı': 'رقم', 'Tarih': 'تاريخ', 'Seçenek listesi': 'قائمة خيارات', 'Evet / Hayır': 'نعم / لا', 'Evet': 'نعم', 'Hayır': 'لا',
-  'Zorunlu alan boş': 'حقل إلزامي فارغ', 'Her alanın bir adı olmalı.': 'يجب أن يكون لكل حقل اسم.', 'Seçenek listesi için en az bir seçenek yazın.': 'اكتب خيارًا واحدًا على الأقل للقائمة.',
-  'Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)': 'هل تريد حذف هذا الحقل؟ (القيم المدخلة في الأعمال القديمة تبقى في قاعدة البيانات لكنها لن تظهر)' })
-Object.assign(EN, { 'İş formu': 'Job form', 'İş formu: ek alanlar': 'Job form: extra fields',
-  'Yeni iş ve düzenleme formuna kendi alanlarınızı ekleyin (örn. Aciliyet, Kutu no). Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.': 'Add your own fields to the new-job and edit forms (e.g. Urgency, Box no). The field name is saved for the selected language; switch the language to enter a name in another one. Languages without a name show the existing one.',
-  'Alan adı': 'Field name', 'Alan türü': 'Field type', 'Seçenekler (virgülle ayırın)': 'Options (comma separated)', 'Zorunlu': 'Required', '＋ Alan ekle': '＋ Add field', 'Henüz ek alan yok': 'No extra fields yet',
-  'Metin': 'Text', 'Uzun metin': 'Long text', 'Sayı': 'Number', 'Tarih': 'Date', 'Seçenek listesi': 'Choice list', 'Evet / Hayır': 'Yes / No', 'Evet': 'Yes', 'Hayır': 'No',
-  'Zorunlu alan boş': 'Required field is empty', 'Her alanın bir adı olmalı.': 'Every field needs a name.', 'Seçenek listesi için en az bir seçenek yazın.': 'Enter at least one option for the choice list.',
-  'Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)': 'Delete this field? (Values already entered on old jobs stay in the database but will not be shown)' })
-Object.assign(AR, { 'Menü öğeleri': 'عناصر القائمة', 'Özel bağlantılar': 'روابط مخصصة', 'Menü adı': 'اسم القائمة', 'Web adresi': 'عنوان الويب', 'Simge': 'الرمز',
-  'İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar. Aşağıdan menüye kendi web bağlantılarınızı da ekleyebilirsiniz.': 'الصفحات المحددة تظهر في القائمة الجانبية. لا يمكن إخفاء الصفحة الرئيسية والإعدادات. الصفحة المخفية لا تُحذف، فقط تختفي من القائمة. يمكنك أيضًا إضافة روابط ويب خاصة بك إلى القائمة من الأسفل.',
-  '＋ Bağlantı ekle': '＋ إضافة رابط', 'Henüz özel bağlantı yok': 'لا توجد روابط مخصصة بعد', 'Her bağlantının bir adı olmalı.': 'يجب أن يكون لكل رابط اسم.', 'Geçerli bir web adresi yazın (https://...).': 'اكتب عنوان ويب صالحًا (https://...).', 'Bu bağlantı menüden silinsin mi?': 'هل تريد حذف هذا الرابط من القائمة؟' })
-Object.assign(EN, { 'Menü öğeleri': 'Menu items', 'Özel bağlantılar': 'Custom links', 'Menü adı': 'Menu name', 'Web adresi': 'Web address', 'Simge': 'Icon',
-  'İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar. Aşağıdan menüye kendi web bağlantılarınızı da ekleyebilirsiniz.': 'Checked pages appear in the side menu. Home and Settings cannot be hidden. A hidden page is not deleted, it just leaves the menu. You can also add your own web links to the menu below.',
-  '＋ Bağlantı ekle': '＋ Add link', 'Henüz özel bağlantı yok': 'No custom links yet', 'Her bağlantının bir adı olmalı.': 'Every link needs a name.', 'Geçerli bir web adresi yazın (https://...).': 'Enter a valid web address (https://...).', 'Bu bağlantı menüden silinsin mi?': 'Remove this link from the menu?' })
+const addTr = (D, o) => Object.keys(o).forEach(k => { if (!(k in D)) D[k] = o[k] })
+addTr(AR, {
+  'Formlar': 'النماذج',
+  'Form': 'النموذج',
+  'Mevcut alanlar': 'الحقول الحالية',
+  'Ek alanlar': 'حقول إضافية',
+  'Her formdan istemediğiniz alanı kaldırabilir, kendi alanlarınızı ekleyebilirsiniz. Değişiklikler tüm kullanıcılarda geçerli olur.': 'يمكنك إزالة الحقول غير المرغوبة من كل نموذج وإضافة حقولك الخاصة. التغييرات تسري على جميع المستخدمين.',
+  'İşareti kaldırdığınız alan formdan kalkar. Zorunlu alanlar kapatılamaz.': 'الحقل الذي تلغي تحديده يختفي من النموذج. لا يمكن إخفاء الحقول الإلزامية.',
+  'Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.': 'يُحفظ اسم الحقل للغة المختارة؛ لكتابة الاسم بلغة أخرى غيّر اللغة. في اللغة التي لا يوجد لها اسم يظهر الاسم الموجود.',
+  'Yeni iş / İş düzenleme': 'عمل جديد / تعديل العمل',
+  'Cari hesap': 'الحساب الجاري',
+  'Stok malzemesi': 'مادة المخزون',
+  'Kasa işlemi': 'عملية الصندوق',
+  'Diş numaraları': 'أرقام الأسنان',
+  'Renk': 'اللون',
+  'Teslim tarihi': 'تاريخ التسليم',
+  'Not': 'ملاحظة',
+  'Tür': 'النوع',
+  'Telefon': 'الهاتف',
+  'Adres': 'العنوان',
+  'Marka': 'الماركة',
+  'Minimum stok': 'الحد الأدنى للمخزون',
+  'Para birimi': 'العملة',
+  'Tarih': 'التاريخ',
+  'Açıklama': 'الوصف',
+  'Alan adı': 'اسم الحقل',
+  'Alan türü': 'نوع الحقل',
+  'Seçenekler (virgülle ayırın)': 'الخيارات (افصل بفاصلة)',
+  'Zorunlu': 'إلزامي',
+  '＋ Alan ekle': '＋ إضافة حقل',
+  'Henüz ek alan yok': 'لا توجد حقول إضافية بعد',
+  'Metin': 'نص',
+  'Uzun metin': 'نص طويل',
+  'Sayı': 'رقم',
+  'Seçenek listesi': 'قائمة خيارات',
+  'Evet / Hayır': 'نعم / لا',
+  'Evet': 'نعم',
+  'Hayır': 'لا',
+  'Zorunlu alan boş': 'حقل إلزامي فارغ',
+  'Her alanın bir adı olmalı.': 'يجب أن يكون لكل حقل اسم.',
+  'Seçenek listesi için en az bir seçenek yazın.': 'اكتب خيارًا واحدًا على الأقل للقائمة.',
+  'Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)': 'هل تريد حذف هذا الحقل؟ (القيم المدخلة في الأعمال القديمة تبقى في قاعدة البيانات لكنها لن تظهر)',
+  'Menü öğeleri': 'عناصر القائمة',
+  'İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar.': 'الصفحات المحددة تظهر في القائمة الجانبية. لا يمكن إخفاء الصفحة الرئيسية والإعدادات. الصفحة المخفية لا تُحذف، فقط تختفي من القائمة.',
+  'Ana sayfa (Dashboard)': 'الصفحة الرئيسية (لوحة المعلومات)',
+  'İşaretli kutular ana sayfada herkese görünür. İstediğinizi ekleyip çıkarabilirsiniz; bir şey silinmez, sadece görünürlük değişir.': 'المربعات المحددة تظهر للجميع في الصفحة الرئيسية. يمكنك إضافة أو إزالة ما تشاء؛ لا يُحذف شيء، يتغير الظهور فقط.',
+  'Kartlar': 'البطاقات',
+  'Grafikler': 'الرسوم البيانية',
+  'Listeler': 'القوائم',
+  'Ana sayfa varsayılana dönsün mü?': 'هل تريد إعادة الصفحة الرئيسية للوضع الافتراضي؟',
+  'Bu ay alınan işler': 'الأعمال المستلمة هذا الشهر',
+  'Önümüzdeki 7 gün teslim': 'تسليم خلال 7 أيام',
+  'Atanmamış aşamalar': 'مراحل غير معيّنة',
+  'Aktif personel': 'الموظفون النشطون',
+  'Doktora göre işler': 'الأعمال حسب الطبيب'
+})
+addTr(EN, {
+  'Formlar': 'Forms',
+  'Form': 'Form',
+  'Mevcut alanlar': 'Existing fields',
+  'Ek alanlar': 'Extra fields',
+  'Her formdan istemediğiniz alanı kaldırabilir, kendi alanlarınızı ekleyebilirsiniz. Değişiklikler tüm kullanıcılarda geçerli olur.': 'You can remove unwanted fields from each form and add your own. Changes apply to all users.',
+  'İşareti kaldırdığınız alan formdan kalkar. Zorunlu alanlar kapatılamaz.': 'A field you uncheck is removed from the form. Required fields cannot be hidden.',
+  'Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.': 'The field name is saved for the selected language; switch the language to enter a name in another one. Languages without a name show the existing one.',
+  'Yeni iş / İş düzenleme': 'New / edit job',
+  'Cari hesap': 'Account',
+  'Stok malzemesi': 'Stock item',
+  'Kasa işlemi': 'Cash transaction',
+  'Diş numaraları': 'Tooth numbers',
+  'Renk': 'Shade',
+  'Teslim tarihi': 'Due date',
+  'Not': 'Note',
+  'Tür': 'Type',
+  'Telefon': 'Phone',
+  'Adres': 'Address',
+  'Marka': 'Brand',
+  'Minimum stok': 'Minimum stock',
+  'Para birimi': 'Currency',
+  'Tarih': 'Date',
+  'Açıklama': 'Description',
+  'Alan adı': 'Field name',
+  'Alan türü': 'Field type',
+  'Seçenekler (virgülle ayırın)': 'Options (comma separated)',
+  'Zorunlu': 'Required',
+  '＋ Alan ekle': '＋ Add field',
+  'Henüz ek alan yok': 'No extra fields yet',
+  'Metin': 'Text',
+  'Uzun metin': 'Long text',
+  'Sayı': 'Number',
+  'Seçenek listesi': 'Choice list',
+  'Evet / Hayır': 'Yes / No',
+  'Evet': 'Yes',
+  'Hayır': 'No',
+  'Zorunlu alan boş': 'Required field is empty',
+  'Her alanın bir adı olmalı.': 'Every field needs a name.',
+  'Seçenek listesi için en az bir seçenek yazın.': 'Enter at least one option for the choice list.',
+  'Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)': 'Delete this field? (Values already entered on old jobs stay in the database but will not be shown)',
+  'Menü öğeleri': 'Menu items',
+  'İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar.': 'Checked pages appear in the side menu. Home and Settings cannot be hidden. A hidden page is not deleted, it just leaves the menu.',
+  'Ana sayfa (Dashboard)': 'Home page (Dashboard)',
+  'İşaretli kutular ana sayfada herkese görünür. İstediğinizi ekleyip çıkarabilirsiniz; bir şey silinmez, sadece görünürlük değişir.': 'Checked boxes are shown to everyone on the home page. Add or remove what you like; nothing is deleted, only visibility changes.',
+  'Kartlar': 'Cards',
+  'Grafikler': 'Charts',
+  'Listeler': 'Lists',
+  'Ana sayfa varsayılana dönsün mü?': 'Reset the home page to default?',
+  'Bu ay alınan işler': 'Jobs received this month',
+  'Önümüzdeki 7 gün teslim': 'Due in the next 7 days',
+  'Atanmamış aşamalar': 'Unassigned stages',
+  'Aktif personel': 'Active staff',
+  'Doktora göre işler': 'Jobs by doctor'
+})
 const DICT = { ar: AR, en: EN }
 const orig = new WeakMap()
 function trNode(n, D) {
@@ -397,7 +487,7 @@ function Shell({ user, lang, setL }) {
   useEffect(() => { document.body.classList.toggle('noscroll', menu); return () => document.body.classList.remove('noscroll') }, [menu])
   const name = id => staff.find(s => s.id === id)?.full_name || '—'
   const rnRaw = settings.role_names || {}; RN = ROLES.some(k => k in rnRaw) ? { tr: rnRaw } : rnRaw; LANG = lang
-  SN = settings.stage_names || {}; MN = settings.menu_names || {}; MI = settings.menu_icons || {}
+  SN = settings.stage_names || {}; MN = settings.menu_names || {}; MI = settings.menu_icons || {}; CFG = settings
   const role = me?.role, rp = { ...DEF, ...(settings.role_pages || {}) }
   const ok = p => p === 'dash' || p === 'tara' || role === 'admin' || (p !== 'ayar' && (!['cari', 'kasa'].includes(p) || role === 'accountant') && (rp[role] || []).includes(p))
   const cur = ok(page) ? page : 'dash'
@@ -408,7 +498,7 @@ function Shell({ user, lang, setL }) {
   const pages = {
     dash: <Dash {...ctx} />, stat: <Stats {...ctx} showMoney={ok('kasa')} />, ayar: <Settings {...ctx} saveSet={saveSet} lang={lang} setL={setL} />, isler: <Jobs key={jf || 'all'} {...ctx} init={jf} />, gorev: <Mine {...ctx} />, ekip: <Team {...ctx} />, tara: <ScanPage lang={lang} stageNames={settings.stage_names} onClose={() => setPage('dash')} />,
     randevu: <Calendar />,
-    cari: <Crud title="Cari Hesaplar (klinikler & tedarikçiler)" table="accounts" order={['name', true]} add="Yeni cari"
+    cari: <Crud title="Cari Hesaplar (klinikler & tedarikçiler)" fkey="accounts" table="accounts" order={['name', true]} add="Yeni cari"
       cols={[{ k:'name', label:'Ad' }, { label:'Tür', r: r => <span className={'pill ' + (r.type === 'musteri' ? '' : 'y')}>{r.type === 'musteri' ? 'Müşteri' : 'Tedarikçi'}</span> }, { k:'phone', label:'Telefon' }, { k:'address', label:'Adres' }]}
       fields={[{ k:'name', label:'Ad', required:true, w:1 }, { k:'type', label:'Tür', type:'select', options:[{ v:'musteri', l:'Müşteri (klinik)' }, { v:'tedarikci', l:'Tedarikçi' }], def:'musteri' }, { k:'phone', label:'Telefon' }, { k:'address', label:'Adres', w:1 }]} />,
     kasa: <Kasa settings={settings} />,
@@ -423,7 +513,6 @@ function Shell({ user, lang, setL }) {
     <aside className={'side ' + (menu ? 'open' : '')}>
       <div className="logo"><i>🦷</i>{settings.lab_name || 'Goodent'}</div>
       {NAV.filter(n => ok(n[0]) && !mHidden(settings).includes(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setJf(null); setMenu(false) }}>{navI(k, ic)} {navL(k, l)}</button>)}
-      {mCustom(settings).filter(d => normUrl(d.url)).map(d => <button key={d.id} onClick={() => { window.open(normUrl(d.url), '_blank', 'noopener,noreferrer'); setMenu(false) }}>{(d.icon || '').trim() || '🔗'} {mcLabel(d)}</button>)}
       <div className="sp" /><button onClick={() => sb.auth.signOut()}>{navI('out', '🚪')} {navL('out', 'Çıkış')}</button>
     </aside>
     <div className="main">
@@ -443,32 +532,39 @@ function Bars({ data }) {
 }
 const count = (arr, f) => Object.entries(arr.reduce((m, x) => { const k = f(x) || '—'; m[k] = (m[k] || 0) + 1; return m }, {}))
 
-function Dash({ cases, name, me, go }) {
+function Dash({ cases, staff = [], name, me, go, settings }) {
+  const sh = id => dashShow(settings).includes(id)
+  const wk = (() => { const d = new Date(); d.setDate(d.getDate() + 7); return new Date(d - d.getTimezoneOffset() * 6e4).toISOString().slice(0, 10) })()
   const open = cases.filter(c => !done(c)), month = today().slice(0, 7)
   const active = open.flatMap(c => stages(c).filter(s => s.status === 'devam'))
   const todayList = open.filter(c => c.due_date === today() || late(c))
   return <>
     <div className="hero"><div><h1>Hoş geldin, {me?.full_name} 👋</h1><p>Dental laboratuvar yönetim paneli</p></div><Tooth3D /></div>
     <div className="cards">
-      <Stat label="Açık işler" value={open.length} c="#2563eb" onClick={go && (() => go('isler', 'open'))} />
-      <Stat label="Geciken işler" value={open.filter(late).length} c="#dc2626" onClick={go && (() => go('isler', 'late'))} />
-      <Stat label="Bugün teslim" value={open.filter(c => c.due_date === today()).length} c="#f59e0b" onClick={go && (() => go('isler', 'today'))} />
-      <Stat label="Bu ay teslim edilen" value={cases.filter(c => c.delivered_at?.startsWith(month)).length} c="#16a34a" onClick={go && (() => go('isler', 'month'))} />
+      {sh('c_open') && <Stat label="Açık işler" value={open.length} c="#2563eb" onClick={go && (() => go('isler', 'open'))} />}
+      {sh('c_late') && <Stat label="Geciken işler" value={open.filter(late).length} c="#dc2626" onClick={go && (() => go('isler', 'late'))} />}
+      {sh('c_today') && <Stat label="Bugün teslim" value={open.filter(c => c.due_date === today()).length} c="#f59e0b" onClick={go && (() => go('isler', 'today'))} />}
+      {sh('c_month') && <Stat label="Bu ay teslim edilen" value={cases.filter(c => c.delivered_at?.startsWith(month)).length} c="#16a34a" onClick={go && (() => go('isler', 'month'))} />}
+      {sh('c_new') && <Stat label="Bu ay alınan işler" value={cases.filter(c => String(c.received_at || c.created_at || '').startsWith(month)).length} c="#0ea5e9" />}
+      {sh('c_week') && <Stat label="Önümüzdeki 7 gün teslim" value={open.filter(c => c.due_date && c.due_date >= today() && c.due_date <= wk).length} c="#8b5cf6" />}
+      {sh('c_unassigned') && <Stat label="Atanmamış aşamalar" value={active.filter(s => !s.assigned_to).length} c="#ef4444" />}
+      {sh('c_staff') && <Stat label="Aktif personel" value={staff.length} c="#14b8a6" />}
     </div>
     <div className="cols">
-      <div className="panel"><h3>Aşamalara göre işler</h3><Bars data={count(active, s => stg(s.stage))} /></div>
-      <div className="panel"><h3>İş türü dağılımı</h3><Bars data={count(open, c => c.work_type)} /></div>
-      <div className="panel"><h3>Personel yükü</h3><Bars data={count(active, s => s.assigned_to ? name(s.assigned_to) : 'Atanmamış')} /></div>
+      {sh('g_stage') && <div className="panel"><h3>Aşamalara göre işler</h3><Bars data={count(active, s => stg(s.stage))} /></div>}
+      {sh('g_type') && <div className="panel"><h3>İş türü dağılımı</h3><Bars data={count(open, c => c.work_type)} /></div>}
+      {sh('g_staff') && <div className="panel"><h3>Personel yükü</h3><Bars data={count(active, s => s.assigned_to ? name(s.assigned_to) : 'Atanmamış')} /></div>}
+      {sh('g_doctor') && <div className="panel"><h3>Doktora göre işler</h3><Bars data={count(open, c => c.doctors?.full_name)} /></div>}
     </div>
-    <div className="panel grow"><h3>Bugün teslim / geciken</h3>
-      {todayList.length ? <div className="tw"><table><tbody>{todayList.map(c => <tr key={c.id}><td>#{c.case_no}</td><td>{c.patients?.full_name}</td><td>Dr. {c.doctors?.full_name}</td><td>{c.work_type}</td><td>{c.due_date}</td><td>{late(c) ? <span className="pill r">Gecikti</span> : <span className="pill y">Bugün</span>}</td></tr>)}</tbody></table></div> : <p className="empty">Bugün teslim veya geciken iş yok 🎉</p>}</div>
+    {sh('l_today') && <div className="panel grow"><h3>Bugün teslim / geciken</h3>
+      {todayList.length ? <div className="tw"><table><tbody>{todayList.map(c => <tr key={c.id}><td>#{c.case_no}</td><td>{c.patients?.full_name}</td><td>Dr. {c.doctors?.full_name}</td><td>{c.work_type}</td><td>{c.due_date}</td><td>{late(c) ? <span className="pill r">Gecikti</span> : <span className="pill y">Bugün</span>}</td></tr>)}</tbody></table></div> : <p className="empty">Bugün teslim veya geciken iş yok 🎉</p>}</div>}
   </>
 }
 
 const Steps = ({ c }) => <div className="steps">{stages(c).map(s => <i key={s.id} className={s.status} title={stg(s.stage)} />)}</div>
 
 function Jobs({ cases, staff, name, load, user, me, init, settings }) {
-  const isAdmin = me?.role === 'admin', defs = cfList(settings)
+  const isAdmin = me?.role === 'admin', defs = cfList(settings), hid = formHidden(settings, 'case')
   const [q, setQ] = useState(''), [fs, setFs] = useState(init || 'open'), [sel, setSel] = useState(null), [nw, setNw] = useState(false), [ed, setEd] = useState(null)
   const [arch, setArch] = useState([]), [av, setAv] = useState(0)
   useEffect(() => {
@@ -517,8 +613,8 @@ function Jobs({ cases, staff, name, load, user, me, init, settings }) {
         <select value={s.assigned_to || ''} disabled={s.status === 'bitti' || !!cur.deleted_at} onChange={e => assign(s.id, e.target.value)}><option value="">— atanmadı —</option>{staff.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}</select>
         {s.status === 'devam' && !cur.deleted_at ? <button className="btn btn-ok" onClick={() => finish(s.id)}>✔ Bitir</button> : <small>{s.finished_at ? fmt(s.finished_at) : ''}</small>}</div>)}
       <Files cid={cur.id} user={user} name={name} /><br /><CaseQR no={cur.case_no} /><button className="btn btn-g" onClick={() => printCaseLabel({ case_no: cur.case_no, patient: cur.patients?.full_name, doctor: cur.doctors?.full_name, work_type: cur.work_type, tooth_numbers: cur.tooth_numbers, due_date: cur.due_date })}>🏷 Etiket yazdır</button> {cur.deleted_at ? <button className="btn btn-ok" onClick={restore}>♻ Geri yükle</button> : <button className="btn btn-g" onClick={archive}>🗄 Arşivle</button>}</Modal>}
-    {nw && <Modal title="Yeni iş kabul" onClose={() => setNw(false)}><NewCase defs={defs} onDone={() => { setNw(false); load() }} /></Modal>}
-    {ed && <Modal title="İşi düzenle" onClose={() => setEd(null)}><EditCase c={ed} defs={defs} onDone={() => { setEd(null); load() }} /></Modal>}
+    {nw && <Modal title="Yeni iş kabul" onClose={() => setNw(false)}><NewCase defs={defs} hid={hid} onDone={() => { setNw(false); load() }} /></Modal>}
+    {ed && <Modal title="İşi düzenle" onClose={() => setEd(null)}><EditCase c={ed} defs={defs} hid={hid} onDone={() => { setEd(null); load() }} /></Modal>}
   </div>
 }
 
@@ -531,6 +627,23 @@ const cfShow = (d, v) => d.type === 'check' ? (v ? 'Evet' : 'Hayır') : d.type =
 const cfClean = (defs, vals) => Object.fromEntries(defs.map(d => [d.id, vals[d.id]]).filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== false))
 const cfMissing = (defs, vals) => defs.find(d => d.required && d.type !== 'check' && String(vals[d.id] ?? '').trim() === '')
 const cfSummary = (defs, ex) => defs.filter(d => ex && ex[d.id] !== undefined).map(d => cfLabel(d) + ': ' + cfShow(d, ex[d.id])).join(' · ')
+let CFG = {}
+const FORMS = {
+  case: { t: 'Yeni iş / İş düzenleme', hide: [['tooth_numbers', 'Diş numaraları'], ['shade', 'Renk'], ['due_date', 'Teslim tarihi'], ['notes', 'Not']] },
+  accounts: { t: 'Cari hesap', hide: [['type', 'Tür'], ['phone', 'Telefon'], ['address', 'Adres']] },
+  inventory_items: { t: 'Stok malzemesi', hide: [['brand', 'Marka'], ['min_level', 'Minimum stok']] },
+  transactions: { t: 'Kasa işlemi', hide: [['account_id', 'Cari hesap'], ['currency', 'Para birimi'], ['tx_date', 'Tarih'], ['description', 'Açıklama']] },
+}
+const formDefs = (st, k) => k === 'case' ? cfList(st) : (Array.isArray(st?.form_fields?.[k]) ? st.form_fields[k] : [])
+const formHidden = (st, k) => Array.isArray(st?.form_hidden?.[k]) ? st.form_hidden[k] : []
+// Ana sayfa (Dashboard) bileşenleri: admin Ayarlar > Ana sayfa'dan açıp kapatır
+const DASH_ALL = [
+  ['c_open', 'Kartlar', 'Açık işler'], ['c_late', 'Kartlar', 'Geciken işler'], ['c_today', 'Kartlar', 'Bugün teslim'], ['c_month', 'Kartlar', 'Bu ay teslim edilen'],
+  ['c_new', 'Kartlar', 'Bu ay alınan işler'], ['c_week', 'Kartlar', 'Önümüzdeki 7 gün teslim'], ['c_unassigned', 'Kartlar', 'Atanmamış aşamalar'], ['c_staff', 'Kartlar', 'Aktif personel'],
+  ['g_stage', 'Grafikler', 'Aşamalara göre işler'], ['g_type', 'Grafikler', 'İş türü dağılımı'], ['g_staff', 'Grafikler', 'Personel yükü'], ['g_doctor', 'Grafikler', 'Doktora göre işler'],
+  ['l_today', 'Listeler', 'Bugün teslim / geciken']]
+const DASH_DEF = ['c_open', 'c_late', 'c_today', 'c_month', 'g_stage', 'g_type', 'g_staff', 'l_today']
+const dashShow = st => Array.isArray(st?.dash_show) ? st.dash_show : DASH_DEF
 function CustomFields({ defs, vals, setVals }) {
   return <>{defs.map(d => {
     const v = vals[d.id] ?? '', set = x => setVals(p => ({ ...p, [d.id]: x })), l = cfLabel(d) + (d.required && d.type !== 'check' ? ' *' : '')
@@ -543,7 +656,7 @@ function CustomFields({ defs, vals, setVals }) {
   })}</>
 }
 
-function NewCase({ onDone, defs = [] }) {
+function NewCase({ onDone, defs = [], hid = [] }) {
   const [docs, setDocs] = useState([]), [f, setF] = useState({ doctor_id:'', newDoctor:'', patient:'', work_type:WORK[0], tooth_numbers:'', shade:'', due_date:'', notes:'' }), [busy, setBusy] = useState(false)
   const [ex, setEx] = useState({})
   const set = k => e => setF({ ...f, [k]: e.target.value })
@@ -562,7 +675,7 @@ function NewCase({ onDone, defs = [] }) {
       const undo = async pid => { if (pid) await sb.from('patients').update({ deleted_at: now() }).eq('id', pid); if (newDocId) await sb.from('doctors').update({ deleted_at: now() }).eq('id', newDocId) }
       const p = await sb.from('patients').insert({ full_name: pat }).select().single()
       if (p.error) { await undo(null); return notify(p.error.message) }
-      const c = await sb.from('cases').insert({ doctor_id: did, patient_id: p.data.id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null, extra: cfClean(defs, ex) }).select().single()
+      const c = await sb.from('cases').insert({ doctor_id: did, patient_id: p.data.id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null, ...(defs.length ? { extra: cfClean(defs, ex) } : {}) }).select().single()
       if (c.error) { await undo(p.data.id); return notify(c.error.message) }
       printCaseLabel({ case_no: c.data.case_no, patient: pat, doctor: f.doctor_id ? docs.find(d => d.id === f.doctor_id)?.full_name : nd, work_type: f.work_type, tooth_numbers: f.tooth_numbers, due_date: f.due_date }).catch(() => {})
       onDone()
@@ -573,15 +686,15 @@ function NewCase({ onDone, defs = [] }) {
     {!f.doctor_id ? <label>Yeni doktor adı<input value={f.newDoctor} onChange={set('newDoctor')} /></label> : <span />}
     <label>Hasta adı<input value={f.patient} onChange={set('patient')} /></label>
     <label>İş türü<select value={f.work_type} onChange={set('work_type')}>{WORK.map(w => <option key={w}>{w}</option>)}</select></label>
-    <label>Diş numaraları<input placeholder="11,12,21" value={f.tooth_numbers} onChange={set('tooth_numbers')} /></label>
-    <label>Renk<input value={f.shade} onChange={set('shade')} /></label>
-    <label>Teslim tarihi<DateInput value={f.due_date} onChange={v => setF({ ...f, due_date: v })} /></label>
+    {!hid.includes('tooth_numbers') && <label>Diş numaraları<input placeholder="11,12,21" value={f.tooth_numbers} onChange={set('tooth_numbers')} /></label>}
+    {!hid.includes('shade') && <label>Renk<input value={f.shade} onChange={set('shade')} /></label>}
+    {!hid.includes('due_date') && <label>Teslim tarihi<DateInput value={f.due_date} onChange={v => setF({ ...f, due_date: v })} /></label>}
     <CustomFields defs={defs} vals={ex} setVals={setEx} />
-    <label className="w">Not<textarea rows="3" value={f.notes} onChange={set('notes')} /></label></div>
+    {!hid.includes('notes') && <label className="w">Not<textarea rows="3" value={f.notes} onChange={set('notes')} /></label>}</div>
     <button className="btn btn-p" onClick={save} disabled={busy}>Kaydet</button></>
 }
 
-function EditCase({ c, onDone, defs = [] }) {
+function EditCase({ c, onDone, defs = [], hid = [] }) {
   const [docs, setDocs] = useState([]), [busy, setBusy] = useState(false)
   const [f, setF] = useState({ doctor_id: c.doctor_id || '', patient: c.patients?.full_name || '', work_type: c.work_type || WORK[0], tooth_numbers: c.tooth_numbers || '', shade: c.shade || '', due_date: c.due_date || '', notes: c.notes || '' })
   const [ex, setEx] = useState(c.extra || {})
@@ -595,7 +708,7 @@ function EditCase({ c, onDone, defs = [] }) {
       const p = await sb.from('patients').update({ full_name: f.patient.trim() }).eq('id', c.patient_id)
       if (p.error) { setBusy(false); return notify(p.error.message) }
     }
-    const r = await sb.from('cases').update({ doctor_id: f.doctor_id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null, extra: { ...Object.fromEntries(Object.entries(c.extra || {}).filter(([k]) => !defs.some(d => d.id === k))), ...cfClean(defs, ex) } }).eq('id', c.id)
+    const r = await sb.from('cases').update({ doctor_id: f.doctor_id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null, ...(defs.length ? { extra: { ...Object.fromEntries(Object.entries(c.extra || {}).filter(([k]) => !defs.some(d => d.id === k))), ...cfClean(defs, ex) } } : {}) }).eq('id', c.id)
     setBusy(false)
     if (r.error) return notify(r.error.message)
     onDone()
@@ -605,11 +718,11 @@ function EditCase({ c, onDone, defs = [] }) {
     <label>Doktor<select value={f.doctor_id} onChange={set('doctor_id')}>{!docs.some(d => d.id === f.doctor_id) && <option value={f.doctor_id}>{c.doctors?.full_name || '—'}</option>}{docs.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></label>
     <label>Hasta adı<input value={f.patient} onChange={set('patient')} /></label>
     <label>İş türü<select value={f.work_type} onChange={set('work_type')}>{types.map(w => <option key={w}>{w}</option>)}</select></label>
-    <label>Diş numaraları<input placeholder="11,12,21" value={f.tooth_numbers} onChange={set('tooth_numbers')} /></label>
-    <label>Renk<input value={f.shade} onChange={set('shade')} /></label>
-    <label>Teslim tarihi<DateInput value={f.due_date} onChange={v => setF({ ...f, due_date: v })} /></label>
+    {!hid.includes('tooth_numbers') && <label>Diş numaraları<input placeholder="11,12,21" value={f.tooth_numbers} onChange={set('tooth_numbers')} /></label>}
+    {!hid.includes('shade') && <label>Renk<input value={f.shade} onChange={set('shade')} /></label>}
+    {!hid.includes('due_date') && <label>Teslim tarihi<DateInput value={f.due_date} onChange={v => setF({ ...f, due_date: v })} /></label>}
     <CustomFields defs={defs} vals={ex} setVals={setEx} />
-    <label className="w">Not<textarea rows="3" value={f.notes} onChange={set('notes')} /></label></div>
+    {!hid.includes('notes') && <label className="w">Not<textarea rows="3" value={f.notes} onChange={set('notes')} /></label>}</div>
     <button className="btn btn-p" onClick={save} disabled={busy}>Kaydet</button></>
 }
 
@@ -627,7 +740,7 @@ function Mine({ cases, user, load, settings }) {
 function Stok({ me, name, user }) {
   const [av, setAv] = useState(0), [pre, setPre] = useState(null)
   return <>
-    <Crud key={av} title="Stok" table="inventory_items" view="stock_levels" soft={false} order={['name', true]} add="Yeni malzeme"
+    <Crud key={av} title="Stok" fkey="inventory_items" table="inventory_items" view="stock_levels" soft={false} order={['name', true]} add="Yeni malzeme"
       cols={[{ k:'name', label:'Malzeme' }, { k:'brand', label:'Marka' }, { label:'Miktar', r: r => <span className={'pill ' + (r.low ? 'r' : 'g')}>{Number(r.qty)}</span> }, { k:'min_level', label:'Min.' }]}
       fields={[{ k:'name', label:'Malzeme adı', required:true, w:1 }, { k:'brand', label:'Marka' }, { k:'min_level', label:'Minimum stok', type:'number', def:0 }]}
       extra={(r, reload) => <><button className="btn btn-g" onClick={() => setPre({ item_id: r.id, item_name: r.name })}>📝 İste</button><button className="btn btn-g" onClick={async () => { const raw = await askPrompt('Miktar (giriş: 5, çıkış: -2)'); const q = raw == null ? '' : String(raw).replace(/[٠-٩]/g, d => d.charCodeAt(0) - 1632).replace(/[۰-۹]/g, d => d.charCodeAt(0) - 1776).replace(/[٫,]/g, '.').replace(/[−–]/g, '-').trim(); if (!q || isNaN(q) || Number(q) === 0) return; if (Number(r.qty) + Number(q) < 0 && !(await askConfirm('Stok eksiye düşecek. Devam edilsin mi?'))) return; const { error } = await sb.from('stock_movements').insert({ item_id:r.id, qty:Number(q) }); if (error) notify(error.message); reload() }}>± Hareket</button></>} />
@@ -829,22 +942,31 @@ function Modal({ title, onClose, children }) {
   return createPortal(<div className="ov" onMouseDown={e => e.target === e.currentTarget && onClose()}><div className="modal"><div className="mh"><h3>{title}</h3><button className="x" onClick={onClose}>✕</button></div>{children}</div></div>, document.body)
 }
 
-function Crud({ title, table, view, sel = '*', soft = true, order, cols, fields, extra, top, filter, add = 'Yeni ekle' }) {
+function Crud({ title, table, view, sel = '*', soft = true, order, cols, fields, extra, top, filter, add = 'Yeni ekle', fkey }) {
+  const defs = fkey ? formDefs(CFG, fkey) : [], hid = fkey ? formHidden(CFG, fkey) : []
+  const vis = fields.filter(x => x.required || !hid.includes(x.k))
+  const cols2 = [...cols, ...defs.slice(0, 3).map(d => ({ label: cfLabel(d), r: r => cfShow(d, (r.extra || {})[d.id]) }))]
+  const [ex, setEx] = useState({})
   const [rows, setRows] = useState([]), [open, setOpen] = useState(false), [f, setF] = useState({}), [eid, setEid] = useState(null), [op, setOp] = useState({}), [q, setQ] = useState('')
   const load = useCallback(async () => {
     let r = sb.from(view || table).select(sel); if (soft) r = r.is('deleted_at', null); if (order) r = r.order(order[0], { ascending: order[1] })
-    const { data, error } = await r; if (error) notify(error.message); setRows(data || [])
+    const { data, error } = await r; if (error) notify(error.message)
+    let list = data || []
+    if (view && fkey) { const e = await sb.from(table).select('id,extra'); if (!e.error) { const m = Object.fromEntries((e.data || []).map(x => [x.id, x.extra])); list = list.map(x => ({ ...x, extra: m[x.id] || {} })) } }
+    setRows(list)
   }, [])
   useEffect(() => { load(); fields.filter(x => x.from).forEach(async x => { const [t, v, l] = x.from
     const { data } = await sb.from(t).select(`${v},${l}`).is('deleted_at', null); setOp(o => ({ ...o, [x.k]: (data || []).map(d => ({ v: d[v], l: d[l] })) })) }) }, [load])
   const base = filter ? rows.filter(filter) : rows
-  const openNew = () => { setEid(null); setF(Object.fromEntries(fields.filter(x => x.def !== undefined).map(x => [x.k, x.def]))); setOpen(true) }
-  const openEdit = r => { setEid(r.id); setF(Object.fromEntries(fields.filter(x => x.k in r).map(x => [x.k, x.type === 'datetime-local' && r[x.k] ? loc(r[x.k]) : r[x.k]]))); setOpen(true) }
+  const openNew = () => { setEid(null); setEx({}); setF(Object.fromEntries(fields.filter(x => x.def !== undefined).map(x => [x.k, x.def]))); setOpen(true) }
+  const openEdit = r => { setEid(r.id); setEx(r.extra || {}); setF(Object.fromEntries(fields.filter(x => x.k in r).map(x => [x.k, x.type === 'datetime-local' && r[x.k] ? loc(r[x.k]) : r[x.k]]))); setOpen(true) }
   async function save() {
     const p = {}
-    for (const x of fields) { if (eid && !(x.k in f)) continue; let v = f[x.k]; if (v === '' || v === undefined) v = null
+    for (const x of fields) { if (!x.required && hid.includes(x.k)) { if (!eid && x.def !== undefined) p[x.k] = x.def; continue }
+      if (eid && !(x.k in f)) continue; let v = f[x.k]; if (v === '' || v === undefined) v = null
       if (v !== null && x.type === 'number') v = Number(v); if (v !== null && x.type === 'datetime-local') v = new Date(v).toISOString()
       if (x.required && v === null) return notify(x.label + ' gerekli'); p[x.k] = v }
+    if (defs.length) { const miss = cfMissing(defs, ex); if (miss) return notify('Zorunlu alan boş · ' + cfLabel(miss)); p.extra = { ...Object.fromEntries(Object.entries(ex).filter(([k]) => !defs.some(d => d.id === k))), ...cfClean(defs, ex) } }
     const { error } = eid ? await sb.from(table).update(p).eq('id', eid) : await sb.from(table).insert(p)
     if (error) return notify(error.message); setOpen(false); load()
   }
@@ -854,17 +976,17 @@ function Crud({ title, table, view, sel = '*', soft = true, order, cols, fields,
   }
   return <>{top && top(base)}
     <div className="panel"><div className="ph"><h3>{title}</h3><input className="srch" placeholder="Ara…" value={q} onChange={e => setQ(e.target.value)} /><button className="btn btn-p" onClick={openNew}>＋ {add}</button></div>
-      <div className="tw"><table><thead><tr>{cols.map(c => <th key={c.label}>{c.label}</th>)}<th /></tr></thead>
-        <tbody>{base.filter(r => JSON.stringify(r).toLowerCase().includes(q.toLowerCase())).map(r => <tr key={r.id}>{cols.map(c => <td key={c.label}>{c.r ? c.r(r) : (r[c.k] ?? '—')}</td>)}
+      <div className="tw"><table><thead><tr>{cols2.map(c => <th key={c.label}>{c.label}</th>)}<th /></tr></thead>
+        <tbody>{base.filter(r => JSON.stringify(r).toLowerCase().includes(q.toLowerCase())).map(r => <tr key={r.id}>{cols2.map(c => <td key={c.label}>{c.r ? c.r(r) : (r[c.k] ?? '—')}</td>)}
           <td className="act">{extra && extra(r, load)}<button className="btn btn-g" onClick={() => openEdit(r)}>✏️</button><button className="btn btn-g" onClick={() => del(r)}>🗑</button></td></tr>)}</tbody></table>
         {!rows.length && <p className="empty">Kayıt yok</p>}</div></div>
-    {open && <Modal title={eid ? 'Düzenle' : add} onClose={() => setOpen(false)}><div className="fg">{fields.map(x => <label key={x.k} className={x.w ? 'w' : ''}>{x.label}
+    {open && <Modal title={eid ? 'Düzenle' : add} onClose={() => setOpen(false)}><div className="fg">{vis.map(x => <label key={x.k} className={x.w ? 'w' : ''}>{x.label}
       {x.type === 'select' ? <select value={f[x.k] ?? ''} onChange={e => setF({ ...f, [x.k]: e.target.value })}><option value="">—</option>{(x.options || op[x.k] || []).map(o => typeof o === 'string' ? { v:o, l:o } : o).map(o => <option key={o.v} value={o.v}>{o.l}</option>)}</select>
         : x.type === 'textarea' ? <textarea rows="3" value={f[x.k] ?? ''} onChange={e => setF({ ...f, [x.k]: e.target.value })} />
         : x.type === 'date' ? <DateInput value={f[x.k] ?? ''} onChange={v => setF({ ...f, [x.k]: v })} />
         : x.type === 'datetime-local' ? <DateTimeInput value={f[x.k] ?? ''} onChange={v => setF({ ...f, [x.k]: v })} />
         : x.type === 'number' ? <NumInput value={f[x.k]} onChange={v => setF({ ...f, [x.k]: v })} />
-        : <input value={f[x.k] ?? ''} onChange={e => setF({ ...f, [x.k]: e.target.value })} />}</label>)}</div>
+        : <input value={f[x.k] ?? ''} onChange={e => setF({ ...f, [x.k]: e.target.value })} />}</label>)}<CustomFields defs={defs} vals={ex} setVals={setEx} /></div>
       <button className="btn btn-p" onClick={save}>Kaydet</button></Modal>}</>
 }
 
@@ -972,38 +1094,29 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
     setMnm(Object.fromEntries(menuItems.map(([k]) => [k, (settings.menu_names || {})[lang]?.[k] || ''])))
     setMic(Object.fromEntries(menuItems.map(([k]) => [k, (settings.menu_icons || {})[k] || ''])))
   }, [lang, JSON.stringify([settings.menu_names || {}, settings.menu_icons || {}])])
-  // ---- Menü öğeleri: göster/gizle + özel bağlantılar ----
-  const [mh, setMh] = useState([]), [mc, setMc] = useState([])
-  useEffect(() => { setMh(mHidden(settings)); setMc(mCustom(settings).map(d => ({ ...d, label: { ...(d.label || {}) } }))) }, [JSON.stringify([settings.menu_hidden || [], settings.menu_custom || []])])
-  const mcSet = (i, p) => setMc(a => a.map((d, j) => j === i ? { ...d, ...p } : d))
-  const mcMove = (i, k) => setMc(a => { const b = [...a], j = i + k; if (j < 0 || j >= b.length) return a; [b[i], b[j]] = [b[j], b[i]]; return b })
-  const mcAdd = () => setMc(a => a.length >= 8 ? a : [...a, { id: 'm_' + Math.random().toString(36).slice(2, 8), icon: '🔗', label: {}, url: '' }])
-  const mcDel = async i => { if (await askConfirm('Bu bağlantı menüden silinsin mi?')) setMc(a => a.filter((_, j) => j !== i)) }
-  async function saveItems() {
-    const out = []
-    for (const d of mc) {
-      const label = Object.fromEntries(Object.entries(d.label || {}).map(([k, v]) => [k, String(v || '').trim()]).filter(([, v]) => v))
-      if (!Object.keys(label).length) { notify('Her bağlantının bir adı olmalı.'); return false }
-      const url = normUrl(d.url)
-      if (!url) { notify('Geçerli bir web adresi yazın (https://...).'); return false }
-      out.push({ id: d.id, icon: String(d.icon || '').trim().slice(0, 8) || '🔗', label, url })
-    }
-    if (!(await saveSet('menu_hidden', mh.filter(k => !['dash', 'ayar'].includes(k))))) return false
-    return saveSet('menu_custom', out)
-  }
+  // ---- Menü öğeleri: göster/gizle ----
+  const [mh, setMh] = useState([])
+  useEffect(() => { setMh(mHidden(settings)) }, [JSON.stringify(settings.menu_hidden || [])])
+  const saveItems = () => saveSet('menu_hidden', mh.filter(k => !['dash', 'ayar'].includes(k)))
   async function saveMenu(reset) {
     const names = reset ? {} : Object.fromEntries(menuItems.map(([k, , d]) => [k, (mnm[k] || '').trim(), d]).filter(([, v, d]) => v && v !== d).map(([k, v]) => [k, v]))
     const icons = reset ? {} : Object.fromEntries(menuItems.map(([k, i]) => [k, (mic[k] || '').trim(), i]).filter(([, v, i]) => v && v !== i).map(([k, v]) => [k, v]))
     if (!(await saveSet('menu_names', { ...(settings.menu_names || {}), [lang]: names }))) return false
     return saveSet('menu_icons', icons)
   }
-  // ---- İş formu: admin tanımlı ek alanlar ----
-  const [cf, setCf] = useState([])
-  useEffect(() => { setCf(cfList(settings).map(d => ({ ...d, label: { ...(d.label || {}) }, optText: (d.options || []).join(', ') }))) }, [JSON.stringify(settings.case_fields || [])])
+  // ---- Formlar: gizlenen alanlar + admin tanımlı ek alanlar ----
+  const [fk, setFk] = useState('case'), [fdefs, setFdefs] = useState({}), [fhid, setFhid] = useState({})
+  useEffect(() => {
+    setFdefs(Object.fromEntries(Object.keys(FORMS).map(k => [k, formDefs(settings, k).map(d => ({ ...d, label: { ...(d.label || {}) }, optText: (d.options || []).join(', ') }))])))
+    setFhid(Object.fromEntries(Object.keys(FORMS).map(k => [k, formHidden(settings, k)])))
+  }, [JSON.stringify([settings.case_fields || [], settings.form_fields || {}, settings.form_hidden || {}])])
+  const cf = fdefs[fk] || []
+  const setCf = fn => setFdefs(m => ({ ...m, [fk]: typeof fn === 'function' ? fn(m[fk] || []) : fn }))
   const cfSet = (i, p) => setCf(a => a.map((d, j) => j === i ? { ...d, ...p } : d))
   const cfMove = (i, k) => setCf(a => { const b = [...a], j = i + k; if (j < 0 || j >= b.length) return a; [b[i], b[j]] = [b[j], b[i]]; return b })
   const cfAdd = () => setCf(a => a.length >= CF_MAX ? a : [...a, { id: 'f_' + Math.random().toString(36).slice(2, 8), type: 'text', label: {}, required: false, optText: '' }])
   const cfDel = async i => { if (await askConfirm('Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)')) setCf(a => a.filter((_, j) => j !== i)) }
+  const toggleHide = (k, on) => setFhid(m => ({ ...m, [fk]: on ? (m[fk] || []).filter(x => x !== k) : [...(m[fk] || []), k] }))
   async function saveCf() {
     const out = []
     for (const d of cf) {
@@ -1017,15 +1130,21 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
       }
       out.push(item)
     }
-    return saveSet('case_fields', out)
+    const hiddenList = (fhid[fk] || []).filter(k => FORMS[fk].hide.some(([x]) => x === k))
+    if (fk === 'case') { if (!(await saveSet('case_fields', out))) return false }
+    else if (!(await saveSet('form_fields', { ...(settings.form_fields || {}), [fk]: out }))) return false
+    return saveSet('form_hidden', { ...(settings.form_hidden || {}), [fk]: hiddenList })
   }
+  // ---- Ana sayfa (Dashboard) bileşenleri ----
+  const [dsh, setDsh] = useState(DASH_DEF)
+  useEffect(() => { setDsh(dashShow(settings)) }, [JSON.stringify(settings.dash_show || null)])
   // ---- Kaydedildi geri bildirimi ----
   const [saved, setSaved] = useState('')
   const doSave = async (key, fn) => { const r = await fn(); if (r !== false) { setSaved(key); setTimeout(() => setSaved(v => v === key ? '' : v), 2500) } }
   const okTag = key => saved === key && <span className="saved">{'✓'} Kaydedildi</span>
   // ---- Sekmeler ----
   const [tab, setTab] = useState(() => sessionStorage.getItem('setTab') || 'hesap')
-  const TABS = [['hesap', '👤', 'Hesabım'], ...(isA ? [['genel', '⚙️', 'Genel'], ['roller', '🔐', 'Roller ve yetkiler'], ['menu', '🧭', 'Menü ve adlar'], ['form', '📝', 'İş formu']] : [])]
+  const TABS = [['hesap', '👤', 'Hesabım'], ...(isA ? [['genel', '⚙️', 'Genel'], ['roller', '🔐', 'Roller ve yetkiler'], ['menu', '🧭', 'Menü ve adlar'], ['ana', '🏠', 'Ana sayfa'], ['form', '📝', 'Formlar']] : [])]
   const sec = TABS.some(t => t[0] === tab) ? tab : 'hesap'
   const lock = (r, p) => ['cari', 'kasa'].includes(p) && r !== 'accountant'
   const setRole = (r, p) => { const c = rp[r] || []; saveSet('role_pages', { ...rp, [r]: c.includes(p) ? c.filter(x => x !== p) : [...c, p] }) }
@@ -1083,8 +1202,20 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
         <div className="tw"><table className="perm"><thead><tr><th>Rol</th>{PAGES.map(p => <th key={p[0]}>{navL(p[0], p[2])}</th>)}</tr></thead>
           <tbody>{ROLES.filter(r => r !== 'admin').map(r => <tr key={r}><td><b>{rn(r)}</b></td>{PAGES.map(([k]) => <td key={k}><input type="checkbox" disabled={lock(r, k)} checked={!lock(r, k) && (rp[r] || []).includes(k)} onChange={() => setRole(r, k)} /></td>)}</tr>)}</tbody></table></div></div></>}
 
-    {sec === 'form' && isA && <div className="panel set-card"><h3>İş formu: ek alanlar</h3>
-      <p className="muted">Yeni iş ve düzenleme formuna kendi alanlarınızı ekleyin (örn. Aciliyet, Kutu no). Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.</p>
+    {sec === 'ana' && isA && <div className="panel set-card"><h3>Ana sayfa (Dashboard)</h3>
+      <p className="muted">İşaretli kutular ana sayfada herkese görünür. İstediğinizi ekleyip çıkarabilirsiniz; bir şey silinmez, sadece görünürlük değişir.</p>
+      {['Kartlar', 'Grafikler', 'Listeler'].map(g => <div key={g}><h3 style={{ marginTop: 16 }}>{g}</h3>
+        <div className="set-fields menu-grid">{DASH_ALL.filter(w => w[1] === g).map(([id, , l]) => <label key={id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><input type="checkbox" style={{ width: 'auto' }} checked={dsh.includes(id)} onChange={e => setDsh(a => e.target.checked ? [...a, id] : a.filter(x => x !== id))} />{l}</label>)}</div></div>)}
+      <div className="set-actions"><button className="btn btn-p" onClick={() => doSave('ana', () => saveSet('dash_show', dsh))}>Kaydet</button><button className="btn btn-g" onClick={async () => (await askConfirm('Ana sayfa varsayılana dönsün mü?')) && doSave('ana', () => saveSet('dash_show', DASH_DEF))}>Varsayılana dön</button>{okTag('ana')}</div></div>}
+
+    {sec === 'form' && isA && <div className="panel set-card"><h3>Formlar</h3>
+      <p className="muted">Her formdan istemediğiniz alanı kaldırabilir, kendi alanlarınızı ekleyebilirsiniz. Değişiklikler tüm kullanıcılarda geçerli olur.</p>
+      <div className="set-fields"><label>Form<select value={fk} onChange={e => setFk(e.target.value)}>{Object.entries(FORMS).map(([k, v]) => <option key={k} value={k}>{v.t}</option>)}</select></label></div>
+      <h3 style={{ marginTop: 18 }}>Mevcut alanlar</h3>
+      <p className="muted">İşareti kaldırdığınız alan formdan kalkar. Zorunlu alanlar kapatılamaz.</p>
+      <div className="set-fields menu-grid">{FORMS[fk].hide.map(([k, l]) => <label key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><input type="checkbox" style={{ width: 'auto' }} checked={!(fhid[fk] || []).includes(k)} onChange={e => toggleHide(k, e.target.checked)} />{l}</label>)}</div>
+      <h3 style={{ marginTop: 18 }}>Ek alanlar</h3>
+      <p className="muted">Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.</p>
       {cf.map((d, i) => <div key={d.id} className="panel" style={{ marginTop: 12, padding: 14 }}>
         <div className="set-fields">
           <label>Alan adı<input maxLength={40} placeholder={cfLabel(d)} value={d.label?.[lang] ?? ''} onChange={e => cfSet(i, { label: { ...d.label, [lang]: e.target.value } })} /></label>
@@ -1101,21 +1232,9 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
 
     {sec === 'menu' && isA && <>
       <div className="panel set-card"><h3>Menü öğeleri</h3>
-        <p className="muted">İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar. Aşağıdan menüye kendi web bağlantılarınızı da ekleyebilirsiniz.</p>
+        <p className="muted">İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar.</p>
         <div className="set-fields menu-grid">{NAV.map(([k, ic, d]) => <label key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><input type="checkbox" style={{ width: 'auto' }} disabled={['dash', 'ayar'].includes(k)} checked={!mh.includes(k)} onChange={e => setMh(a => e.target.checked ? a.filter(x => x !== k) : [...a, k])} />{navI(k, ic)} {navL(k, d)}</label>)}</div>
-        <h3 style={{ marginTop: 22 }}>Özel bağlantılar</h3>
-        {mc.map((d, i) => <div key={d.id} className="panel" style={{ marginTop: 12, padding: 14 }}>
-          <div className="set-fields">
-            <label>Simge<input maxLength={8} value={d.icon ?? ''} onChange={e => mcSet(i, { icon: e.target.value })} /></label>
-            <label>Menü adı<input maxLength={24} placeholder={mcLabel(d)} value={d.label?.[lang] ?? ''} onChange={e => mcSet(i, { label: { ...d.label, [lang]: e.target.value } })} /></label>
-            <label>Web adresi<input dir="ltr" placeholder="https://..." value={d.url ?? ''} onChange={e => mcSet(i, { url: e.target.value })} /></label>
-          </div>
-          <div className="set-actions" style={{ marginTop: 10 }}>
-            <button className="btn btn-g" disabled={i === 0} onClick={() => mcMove(i, -1)} aria-label="↑">↑</button>
-            <button className="btn btn-g" disabled={i === mc.length - 1} onClick={() => mcMove(i, 1)} aria-label="↓">↓</button>
-            <button className="btn btn-g btn-del" onClick={() => mcDel(i)}>🗑 Sil</button></div></div>)}
-        {!mc.length && <p className="empty">Henüz özel bağlantı yok</p>}
-        <div className="set-actions"><button className="btn btn-g" onClick={mcAdd} disabled={mc.length >= 8}>＋ Bağlantı ekle</button><button className="btn btn-p" onClick={() => doSave('mitems', saveItems)}>Kaydet</button>{okTag('mitems')}</div></div>
+        <div className="set-actions"><button className="btn btn-p" onClick={() => doSave('mitems', saveItems)}>Kaydet</button>{okTag('mitems')}</div></div>
       <div className="panel set-card"><h3>Menü adları</h3>
         <p className="muted">Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.</p>
         <div className="set-fields menu-grid">{menuItems.map(([k, ic, d]) => <label key={k}>{d}<span className="menu-row">
@@ -1178,7 +1297,7 @@ function Kasa({ settings }) {
   const [from, setFrom] = useState(today().slice(0, 8) + '01'), [to, setTo] = useState(today()), [acc, setAcc] = useState(''), [accs, setAccs] = useState([]), [inv, setInv] = useState(null)
   useEffect(() => { sb.from('accounts').select('*').is('deleted_at', null).then(r => setAccs(r.data || [])) }, [])
   const flt = r => (!from || r.tx_date >= from) && (!to || r.tx_date <= to) && (!acc || r.account_id === acc)
-  return <Crud title="Kasa & İşlemler" table="transactions" sel="*, accounts(name)" order={['tx_date', false]} add="Yeni işlem" filter={flt}
+  return <Crud title="Kasa & İşlemler" fkey="transactions" table="transactions" sel="*, accounts(name)" order={['tx_date', false]} add="Yeni işlem" filter={flt}
     top={rows => { const s = t => rows.filter(r => r.type === t && r.currency === 'TL').reduce((x, r) => x + Number(r.amount), 0)
       return <>
         <div className="panel"><div className="ph"><h3>Tarih aralığı</h3>
