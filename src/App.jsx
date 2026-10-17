@@ -85,6 +85,11 @@ const ERR = [
   [/token has expired|otp_expired|link is invalid or has expired/i, 'Bağlantının süresi dolmuş ya da geçersiz. Yeniden şifre sıfırlama isteyin.', 'انتهت صلاحية الرابط أو أنه غير صالح. اطلب إعادة تعيين كلمة المرور من جديد.'],
   [/auth session missing|session_not_found|jwt expired|invalid jwt/i, 'Oturum süresi dolmuş. Lütfen yeniden giriş yapın.', 'انتهت الجلسة. يرجى تسجيل الدخول من جديد.'],
   [/database error saving new user/i, 'Hesap oluşturulamadı. Lütfen tekrar deneyin.', 'تعذّر إنشاء الحساب. حاول مرة أخرى.'],
+  [/database error deleting user/i, 'Hesap silinemedi: bu kullanıcıya bağlı kayıtlar var.', 'تعذّر حذف الحساب: توجد سجلات مرتبطة بهذا المستخدم.'],
+  [/yetkiniz yok/i, 'Yetkiniz yok.', 'ليست لديك صلاحية.'],
+  [/giriş gerekli/i, 'Giriş gerekli.', 'تسجيل الدخول مطلوب.'],
+  [/ge[cç]ersiz istek/i, 'Geçersiz istek.', 'طلب غير صالح.'],
+  [/non-2xx status code/i, 'Sunucu işlemi reddetti. Daha sonra tekrar deneyin.', 'رفض الخادم العملية. حاول لاحقًا.'],
   [/failed to send a request to the edge function|functionshttperror|functionsfetcherror/i, 'Sunucuya ulaşılamadı. Daha sonra tekrar deneyin.', 'تعذّر الوصول إلى الخادم. حاول لاحقًا.'],
   [/failed to fetch|networkerror|load failed|network request failed/i, 'Bağlantı hatası. İnterneti kontrol edip tekrar deneyin.', 'خطأ في الاتصال. تحقق من الإنترنت وحاول مرة أخرى.'],
   [/row-level security|permission denied/i, 'Bu işlem için yetkiniz yok.', 'ليست لديك صلاحية لهذا الإجراء.'],
@@ -646,7 +651,11 @@ function Team({ cases, staff, me, load }) {
   // Giriş hesabını (Supabase Auth) tamamen siler: Edge Function 'delete-user' (yalnızca admin)
   const rmUser = async id => {
     const { data, error } = await sb.functions.invoke('delete-user', { body: { id } })
-    if (error || !data?.ok) { notify(data?.error || error?.message || 'Silinemedi'); return false }
+    if (error || !data?.ok) {
+      let m = data?.error || error?.message || 'Silinemedi'
+      try { const j = await error?.context?.json?.(); if (j?.error) m = j.error } catch { /* yok say */ }
+      notify(m); return false
+    }
     return true
   }
   const approve = async (p, ok) => {
