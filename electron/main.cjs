@@ -1,4 +1,4 @@
-const { app, BrowserWindow, session, shell, Menu, ipcMain, dialog } = require('electron')
+const { app, BrowserWindow, session, shell, Menu, ipcMain } = require('electron')
 const path = require('path')
 const fs = require('fs')
 
@@ -9,6 +9,22 @@ if (!gotLock) {
 }
 
 let win = null
+
+// ---- Güvenlik yardımcıları ----
+// Uygulamanın kendi sayfası dışından (başka site, enjekte edilmiş içerik) gelen IPC çağrılarını reddet
+const trusted = (e) => !!(e && e.senderFrame && /^file:\/\//i.test(e.senderFrame.url || ''))
+
+// Her pencere için: başka adrese gitmeyi, <webview> eklemeyi ve izinsiz yeni pencere açmayı engelle
+app.on('web-contents-created', (_e, contents) => {
+  contents.on('will-navigate', (ev, url) => {
+    if (!/^file:\/\//i.test(url)) {
+      ev.preventDefault()
+      if (/^https:/i.test(url)) shell.openExternal(url)
+    }
+  })
+  contents.on('will-attach-webview', (ev) => ev.preventDefault())
+  contents.setWindowOpenHandler(() => ({ action: 'deny' }))
+})
 
 // ---- Otomatik güncelleme (electron-updater) ----
 // Güncelleme adresi package.json > build.publish içinde tanımlıdır.
@@ -42,18 +58,19 @@ function setupAutoUpdate() {
   })
   autoUpdater.on('error', (e) => {
     console.error('Güncelleme hatası:', e && e.message)
-    sendUpdate({ state: 'error', message: String((e && e.message) || e) })
+    sendUpdate({ state: 'error', message: String((e && e.message) || e).split('\n')[0].slice(0, 200) })
   })
 
   const check = () => autoUpdater.checkForUpdates().catch(() => {})
 
   // Arayüz açılınca son durumu tekrar gönder (çubuk kaybolmasın), yoksa kontrol et
-  ipcMain.handle('update:check', () => {
-    if (updLast && updLast.state !== 'none') { sendUpdate(updLast); return }
+  ipcMain.handle('update:check', (e) => {
+    if (!trusted(e)) return
+    if (updLast && ['available', 'downloading', 'installing'].includes(updLast.state)) { sendUpdate(updLast); return }
     return check()
   })
-  ipcMain.handle('update:download', () =>
-    autoUpdater.downloadUpdate().catch((e) => sendUpdate({ state: 'error', message: String(e) }))
+  ipcMain.handle('update:download', (e) =>
+    !trusted(e) ? undefined : autoUpdater.downloadUpdate().catch((e) => sendUpdate({ state: 'error', message: String((e && e.message) || e).split('\n')[0].slice(0, 200) }))
   )
 
   check()
@@ -72,6 +89,10 @@ function createWindow() {
     webPreferences: {
       contextIsolation: true,
       nodeIntegration: false,
+      sandbox: true,
+      webSecurity: true,
+      allowRunningInsecureContent: false,
+      webviewTag: false,
       preload: path.join(__dirname, 'preload.cjs'),
     },
   })
@@ -83,7 +104,7 @@ function createWindow() {
 
   // Dış bağlantıları varsayılan tarayıcıda aç
   win.webContents.setWindowOpenHandler(({ url }) => {
-    if (/^https?:/i.test(url)) shell.openExternal(url)
+    if (/^https:/i.test(url)) shell.openExternal(url)
     return { action: 'deny' }
   })
 
@@ -91,9 +112,13 @@ function createWindow() {
 }
 
 // Etiket yazdırma (50x30 mm): gizli pencerede HTML'i açıp yazdırır
-ipcMain.handle('print-html', (_e, html) =>
+ipcMain.handle('print-html', (e, html) =>
   new Promise((resolve) => {
-    const w = new BrowserWindow({ show: false, webPreferences: { sandbox: true } })
+    if (!trusted(e) || typeof html !== 'string' || html.length > 500000) {
+      resolve({ ok: false, reason: 'reddedildi' })
+      return
+    }
+    const w = new BrowserWindow({ show: false, webPreferences: { sandbox: true, contextIsolation: true, nodeIntegration: false } })
     w.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(html))
     w.webContents.once('did-finish-load', async () => {
       try {
@@ -124,11 +149,12 @@ ipcMain.handle('print-html', (_e, html) =>
 
 if (gotLock) app.whenReady().then(() => {
   // Kamera (barkod/QR okutma) izni
-  session.defaultSession.setPermissionRequestHandler((_wc, permission, cb) => {
-    cb(['media', 'camera', 'mediaKeySystem'].includes(permission))
+  const ownPage = (url) => /^file:\/\//i.test(url || '')
+  session.defaultSession.setPermissionRequestHandler((_wc, permission, cb, details) => {
+    cb(['media', 'camera'].includes(permission) && ownPage(details && details.requestingUrl))
   })
-  session.defaultSession.setPermissionCheckHandler((_wc, permission) =>
-    ['media', 'camera'].includes(permission)
+  session.defaultSession.setPermissionCheckHandler((_wc, permission, origin) =>
+    ['media', 'camera'].includes(permission) && ownPage(origin)
   )
 
   createWindow()
