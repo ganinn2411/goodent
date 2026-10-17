@@ -182,6 +182,18 @@ const EN = {
 'Genel':'General','Laboratuvar adı':'Lab name','Hesabım':'My account','Yeni şifre':'New password','Şifreyi değiştir':'Change password','Yetkiler':'Permissions','Rol':'Role','Rol adları':'Role names','Yedek':'Backup','Yedek indir (JSON)':'Download backup (JSON)','Dil':'Language','Hoş geldin,':'Welcome,','Dental laboratuvar yönetim paneli':'Dental laboratory management panel','Dental Laboratuvar Yönetimi':'Dental Laboratory Management','Hangi rol hangi sayfayı görebilir. Kasa ve Cari sadece admin ile muhasebe rolüne açılabilir.':'Which role can see which page. Cash and Accounts can only be opened to admin and accountant roles.',
 'Tarih aralığı':'Date range','Tüm cariler':'All accounts','🧾 Fatura / Ekstre':'🧾 Invoice / Statement','Tümü':'All','🖨 Yazdır / PDF':'🖨 Print / PDF','Fatura / Ekstre':'Invoice / Statement','Fatura / Hesap Ekstresi':'Invoice / Account Statement',
 'Dosyalar':'Files','＋ Dosya yükle':'＋ Upload file','Dosya yok':'No files','👁 Aç':'👁 Open','GG.AA.YYYY':'DD.MM.YYYY','SS:DD':'HH:MM'}
+Object.assign(AR, { 'İş formu': 'نموذج العمل', 'İş formu: ek alanlar': 'نموذج العمل: حقول إضافية',
+  'Yeni iş ve düzenleme formuna kendi alanlarınızı ekleyin (örn. Aciliyet, Kutu no). Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.': 'أضف حقولك الخاصة إلى نموذج العمل الجديد والتعديل (مثل: الاستعجال، رقم العلبة). يُحفظ اسم الحقل للغة المختارة؛ لكتابة الاسم بلغة أخرى غيّر اللغة. في اللغة التي لا يوجد لها اسم يظهر الاسم الموجود.',
+  'Alan adı': 'اسم الحقل', 'Alan türü': 'نوع الحقل', 'Seçenekler (virgülle ayırın)': 'الخيارات (افصل بفاصلة)', 'Zorunlu': 'إلزامي', '＋ Alan ekle': '＋ إضافة حقل', 'Henüz ek alan yok': 'لا توجد حقول إضافية بعد',
+  'Metin': 'نص', 'Uzun metin': 'نص طويل', 'Sayı': 'رقم', 'Tarih': 'تاريخ', 'Seçenek listesi': 'قائمة خيارات', 'Evet / Hayır': 'نعم / لا', 'Evet': 'نعم', 'Hayır': 'لا',
+  'Zorunlu alan boş': 'حقل إلزامي فارغ', 'Her alanın bir adı olmalı.': 'يجب أن يكون لكل حقل اسم.', 'Seçenek listesi için en az bir seçenek yazın.': 'اكتب خيارًا واحدًا على الأقل للقائمة.',
+  'Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)': 'هل تريد حذف هذا الحقل؟ (القيم المدخلة في الأعمال القديمة تبقى في قاعدة البيانات لكنها لن تظهر)' })
+Object.assign(EN, { 'İş formu': 'Job form', 'İş formu: ek alanlar': 'Job form: extra fields',
+  'Yeni iş ve düzenleme formuna kendi alanlarınızı ekleyin (örn. Aciliyet, Kutu no). Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.': 'Add your own fields to the new-job and edit forms (e.g. Urgency, Box no). The field name is saved for the selected language; switch the language to enter a name in another one. Languages without a name show the existing one.',
+  'Alan adı': 'Field name', 'Alan türü': 'Field type', 'Seçenekler (virgülle ayırın)': 'Options (comma separated)', 'Zorunlu': 'Required', '＋ Alan ekle': '＋ Add field', 'Henüz ek alan yok': 'No extra fields yet',
+  'Metin': 'Text', 'Uzun metin': 'Long text', 'Sayı': 'Number', 'Tarih': 'Date', 'Seçenek listesi': 'Choice list', 'Evet / Hayır': 'Yes / No', 'Evet': 'Yes', 'Hayır': 'No',
+  'Zorunlu alan boş': 'Required field is empty', 'Her alanın bir adı olmalı.': 'Every field needs a name.', 'Seçenek listesi için en az bir seçenek yazın.': 'Enter at least one option for the choice list.',
+  'Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)': 'Delete this field? (Values already entered on old jobs stay in the database but will not be shown)' })
 const DICT = { ar: AR, en: EN }
 const orig = new WeakMap()
 function trNode(n, D) {
@@ -443,8 +455,8 @@ function Dash({ cases, name, me, go }) {
 
 const Steps = ({ c }) => <div className="steps">{stages(c).map(s => <i key={s.id} className={s.status} title={stg(s.stage)} />)}</div>
 
-function Jobs({ cases, staff, name, load, user, me, init }) {
-  const isAdmin = me?.role === 'admin'
+function Jobs({ cases, staff, name, load, user, me, init, settings }) {
+  const isAdmin = me?.role === 'admin', defs = cfList(settings)
   const [q, setQ] = useState(''), [fs, setFs] = useState(init || 'open'), [sel, setSel] = useState(null), [nw, setNw] = useState(false), [ed, setEd] = useState(null)
   const [arch, setArch] = useState([]), [av, setAv] = useState(0)
   useEffect(() => {
@@ -486,25 +498,49 @@ function Jobs({ cases, staff, name, load, user, me, init }) {
       {!list.length && <p className="empty">İş bulunamadı</p>}</div>
     {cur && <Modal title={`#${cur.case_no} · ${cur.patients?.full_name}`} onClose={() => setSel(null)}>
       <p className="muted">Dr. {cur.doctors?.full_name} · {cur.work_type} · Diş: {cur.tooth_numbers || '—'} · Renk: {cur.shade || '—'} · Teslim: {cur.due_date || '—'}</p>
+      {cfSummary(defs, cur.extra) && <p className="muted">{cfSummary(defs, cur.extra)}</p>}
       {cur.deleted_at && <p><span className="pill y">Bu iş arşivde</span> <small>{fmt(cur.deleted_at)}</small></p>}
       {cur.notes && <p>{cur.notes}</p>}
       {stages(cur).map(s => <div key={s.id} className={'tlr ' + s.status}><span className="dot" /><b>{stg(s.stage)}</b>
         <select value={s.assigned_to || ''} disabled={s.status === 'bitti' || !!cur.deleted_at} onChange={e => assign(s.id, e.target.value)}><option value="">— atanmadı —</option>{staff.map(p => <option key={p.id} value={p.id}>{p.full_name}</option>)}</select>
         {s.status === 'devam' && !cur.deleted_at ? <button className="btn btn-ok" onClick={() => finish(s.id)}>✔ Bitir</button> : <small>{s.finished_at ? fmt(s.finished_at) : ''}</small>}</div>)}
       <Files cid={cur.id} user={user} name={name} /><br /><CaseQR no={cur.case_no} /><button className="btn btn-g" onClick={() => printCaseLabel({ case_no: cur.case_no, patient: cur.patients?.full_name, doctor: cur.doctors?.full_name, work_type: cur.work_type, tooth_numbers: cur.tooth_numbers, due_date: cur.due_date })}>🏷 Etiket yazdır</button> {cur.deleted_at ? <button className="btn btn-ok" onClick={restore}>♻ Geri yükle</button> : <button className="btn btn-g" onClick={archive}>🗄 Arşivle</button>}</Modal>}
-    {nw && <Modal title="Yeni iş kabul" onClose={() => setNw(false)}><NewCase onDone={() => { setNw(false); load() }} /></Modal>}
-    {ed && <Modal title="İşi düzenle" onClose={() => setEd(null)}><EditCase c={ed} onDone={() => { setEd(null); load() }} /></Modal>}
+    {nw && <Modal title="Yeni iş kabul" onClose={() => setNw(false)}><NewCase defs={defs} onDone={() => { setNw(false); load() }} /></Modal>}
+    {ed && <Modal title="İşi düzenle" onClose={() => setEd(null)}><EditCase c={ed} defs={defs} onDone={() => { setEd(null); load() }} /></Modal>}
   </div>
 }
 
-function NewCase({ onDone }) {
+// ---- Admin tanımlı ek alanlar (iş formu) ----
+const CF_TYPES = [['text', 'Metin'], ['textarea', 'Uzun metin'], ['number', 'Sayı'], ['date', 'Tarih'], ['select', 'Seçenek listesi'], ['check', 'Evet / Hayır']]
+const CF_MAX = 12
+const cfList = st => Array.isArray(st?.case_fields) ? st.case_fields : []
+const cfLabel = d => d.label?.[LANG] || d.label?.tr || Object.values(d.label || {}).find(Boolean) || ''
+const cfShow = (d, v) => d.type === 'check' ? (v ? 'Evet' : 'Hayır') : d.type === 'date' ? (toDisp(v) || '—') : (v === undefined || v === null || v === '' ? '—' : String(v))
+const cfClean = (defs, vals) => Object.fromEntries(defs.map(d => [d.id, vals[d.id]]).filter(([, v]) => v !== undefined && v !== null && v !== '' && v !== false))
+const cfMissing = (defs, vals) => defs.find(d => d.required && d.type !== 'check' && String(vals[d.id] ?? '').trim() === '')
+const cfSummary = (defs, ex) => defs.filter(d => ex && ex[d.id] !== undefined).map(d => cfLabel(d) + ': ' + cfShow(d, ex[d.id])).join(' · ')
+function CustomFields({ defs, vals, setVals }) {
+  return <>{defs.map(d => {
+    const v = vals[d.id] ?? '', set = x => setVals(p => ({ ...p, [d.id]: x })), l = cfLabel(d) + (d.required && d.type !== 'check' ? ' *' : '')
+    if (d.type === 'textarea') return <label key={d.id} className="w">{l}<textarea rows="3" value={v} onChange={e => set(e.target.value)} /></label>
+    if (d.type === 'number') return <label key={d.id}>{l}<NumInput value={v} onChange={set} /></label>
+    if (d.type === 'date') return <label key={d.id}>{l}<DateInput value={v} onChange={set} /></label>
+    if (d.type === 'select') return <label key={d.id}>{l}<select value={v} onChange={e => set(e.target.value)}><option value="">—</option>{(d.options || []).map(o => <option key={o}>{o}</option>)}{v && !(d.options || []).includes(v) && <option>{v}</option>}</select></label>
+    if (d.type === 'check') return <label key={d.id} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><input type="checkbox" style={{ width: 'auto' }} checked={!!vals[d.id]} onChange={e => set(e.target.checked)} />{l}</label>
+    return <label key={d.id}>{l}<input value={v} onChange={e => set(e.target.value)} /></label>
+  })}</>
+}
+
+function NewCase({ onDone, defs = [] }) {
   const [docs, setDocs] = useState([]), [f, setF] = useState({ doctor_id:'', newDoctor:'', patient:'', work_type:WORK[0], tooth_numbers:'', shade:'', due_date:'', notes:'' }), [busy, setBusy] = useState(false)
+  const [ex, setEx] = useState({})
   const set = k => e => setF({ ...f, [k]: e.target.value })
   useEffect(() => { sb.from('doctors').select('id,full_name').is('deleted_at', null).then(r => setDocs(r.data || [])) }, [])
   async function save() {
     if (busy) return
     const pat = f.patient.trim(), nd = f.newDoctor.trim()
     if (!pat || (!f.doctor_id && !nd)) return notify('Doktor ve hasta adı gerekli')
+    const miss = cfMissing(defs, ex); if (miss) return notify('Zorunlu alan boş · ' + cfLabel(miss))
     setBusy(true)
     const now = () => new Date().toISOString()
     let newDocId = null
@@ -514,7 +550,7 @@ function NewCase({ onDone }) {
       const undo = async pid => { if (pid) await sb.from('patients').update({ deleted_at: now() }).eq('id', pid); if (newDocId) await sb.from('doctors').update({ deleted_at: now() }).eq('id', newDocId) }
       const p = await sb.from('patients').insert({ full_name: pat }).select().single()
       if (p.error) { await undo(null); return notify(p.error.message) }
-      const c = await sb.from('cases').insert({ doctor_id: did, patient_id: p.data.id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null }).select().single()
+      const c = await sb.from('cases').insert({ doctor_id: did, patient_id: p.data.id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null, extra: cfClean(defs, ex) }).select().single()
       if (c.error) { await undo(p.data.id); return notify(c.error.message) }
       printCaseLabel({ case_no: c.data.case_no, patient: pat, doctor: f.doctor_id ? docs.find(d => d.id === f.doctor_id)?.full_name : nd, work_type: f.work_type, tooth_numbers: f.tooth_numbers, due_date: f.due_date }).catch(() => {})
       onDone()
@@ -528,23 +564,26 @@ function NewCase({ onDone }) {
     <label>Diş numaraları<input placeholder="11,12,21" value={f.tooth_numbers} onChange={set('tooth_numbers')} /></label>
     <label>Renk<input value={f.shade} onChange={set('shade')} /></label>
     <label>Teslim tarihi<DateInput value={f.due_date} onChange={v => setF({ ...f, due_date: v })} /></label>
+    <CustomFields defs={defs} vals={ex} setVals={setEx} />
     <label className="w">Not<textarea rows="3" value={f.notes} onChange={set('notes')} /></label></div>
     <button className="btn btn-p" onClick={save} disabled={busy}>Kaydet</button></>
 }
 
-function EditCase({ c, onDone }) {
+function EditCase({ c, onDone, defs = [] }) {
   const [docs, setDocs] = useState([]), [busy, setBusy] = useState(false)
   const [f, setF] = useState({ doctor_id: c.doctor_id || '', patient: c.patients?.full_name || '', work_type: c.work_type || WORK[0], tooth_numbers: c.tooth_numbers || '', shade: c.shade || '', due_date: c.due_date || '', notes: c.notes || '' })
+  const [ex, setEx] = useState(c.extra || {})
   const set = k => e => setF({ ...f, [k]: e.target.value })
   useEffect(() => { sb.from('doctors').select('id,full_name').is('deleted_at', null).then(r => setDocs(r.data || [])) }, [])
   async function save() {
     if (!f.patient.trim() || !f.doctor_id) return notify('Doktor ve hasta adı gerekli')
+    const miss = cfMissing(defs, ex); if (miss) return notify('Zorunlu alan boş · ' + cfLabel(miss))
     setBusy(true)
     if (f.patient.trim() !== (c.patients?.full_name || '')) {
       const p = await sb.from('patients').update({ full_name: f.patient.trim() }).eq('id', c.patient_id)
       if (p.error) { setBusy(false); return notify(p.error.message) }
     }
-    const r = await sb.from('cases').update({ doctor_id: f.doctor_id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null }).eq('id', c.id)
+    const r = await sb.from('cases').update({ doctor_id: f.doctor_id, work_type: f.work_type, tooth_numbers: f.tooth_numbers, shade: f.shade, notes: f.notes, due_date: f.due_date || null, extra: { ...Object.fromEntries(Object.entries(c.extra || {}).filter(([k]) => !defs.some(d => d.id === k))), ...cfClean(defs, ex) } }).eq('id', c.id)
     setBusy(false)
     if (r.error) return notify(r.error.message)
     onDone()
@@ -557,16 +596,18 @@ function EditCase({ c, onDone }) {
     <label>Diş numaraları<input placeholder="11,12,21" value={f.tooth_numbers} onChange={set('tooth_numbers')} /></label>
     <label>Renk<input value={f.shade} onChange={set('shade')} /></label>
     <label>Teslim tarihi<DateInput value={f.due_date} onChange={v => setF({ ...f, due_date: v })} /></label>
+    <CustomFields defs={defs} vals={ex} setVals={setEx} />
     <label className="w">Not<textarea rows="3" value={f.notes} onChange={set('notes')} /></label></div>
     <button className="btn btn-p" onClick={save} disabled={busy}>Kaydet</button></>
 }
 
-function Mine({ cases, user, load }) {
+function Mine({ cases, user, load, settings }) {
+  const defs = cfList(settings)
   const mine = cases.flatMap(c => stages(c).filter(s => s.assigned_to === user.id && s.status === 'devam').map(s => ({ c, s })))
   const finish = async id => { const { error } = await sb.from('case_stages').update({ status:'bitti' }).eq('id', id); if (error) notify(error.message); load() }
   return <div className="cols">{mine.map(({ c, s }) => <div key={s.id} className="panel" style={late(c) ? { borderLeft:'5px solid var(--bad)' } : {}}>
     <b>#{c.case_no}</b> <span className="pill">{stg(s.stage)}</span><h3 style={{ marginTop:8 }}>{c.patients?.full_name} · {c.work_type}</h3>
-    <p className="muted">Diş: {c.tooth_numbers || '—'} · Renk: {c.shade || '—'} · Teslim: {c.due_date || '—'}</p><p>{c.notes}</p>
+    <p className="muted">Diş: {c.tooth_numbers || '—'} · Renk: {c.shade || '—'} · Teslim: {c.due_date || '—'}</p>{cfSummary(defs, c.extra) && <p className="muted">{cfSummary(defs, c.extra)}</p>}<p>{c.notes}</p>
     <button className="btn btn-ok" onClick={() => finish(s.id)}>✔ Bitir</button></div>)}
     {!mine.length && <div className="panel empty">Sana atanmış devam eden iş yok 👍</div>}</div>
 }
@@ -925,13 +966,35 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
     if (!(await saveSet('menu_names', { ...(settings.menu_names || {}), [lang]: names }))) return false
     return saveSet('menu_icons', icons)
   }
+  // ---- İş formu: admin tanımlı ek alanlar ----
+  const [cf, setCf] = useState([])
+  useEffect(() => { setCf(cfList(settings).map(d => ({ ...d, label: { ...(d.label || {}) }, optText: (d.options || []).join(', ') }))) }, [JSON.stringify(settings.case_fields || [])])
+  const cfSet = (i, p) => setCf(a => a.map((d, j) => j === i ? { ...d, ...p } : d))
+  const cfMove = (i, k) => setCf(a => { const b = [...a], j = i + k; if (j < 0 || j >= b.length) return a; [b[i], b[j]] = [b[j], b[i]]; return b })
+  const cfAdd = () => setCf(a => a.length >= CF_MAX ? a : [...a, { id: 'f_' + Math.random().toString(36).slice(2, 8), type: 'text', label: {}, required: false, optText: '' }])
+  const cfDel = async i => { if (await askConfirm('Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)')) setCf(a => a.filter((_, j) => j !== i)) }
+  async function saveCf() {
+    const out = []
+    for (const d of cf) {
+      const label = Object.fromEntries(Object.entries(d.label || {}).map(([k, v]) => [k, String(v || '').trim()]).filter(([, v]) => v))
+      if (!Object.keys(label).length) { notify('Her alanın bir adı olmalı.'); return false }
+      const item = { id: d.id, type: d.type, label, required: d.type !== 'check' && !!d.required }
+      if (d.type === 'select') {
+        const options = [...new Set(String(d.optText || '').split(/[,،]/).map(x => x.trim()).filter(Boolean))]
+        if (!options.length) { notify('Seçenek listesi için en az bir seçenek yazın.'); return false }
+        item.options = options
+      }
+      out.push(item)
+    }
+    return saveSet('case_fields', out)
+  }
   // ---- Kaydedildi geri bildirimi ----
   const [saved, setSaved] = useState('')
   const doSave = async (key, fn) => { const r = await fn(); if (r !== false) { setSaved(key); setTimeout(() => setSaved(v => v === key ? '' : v), 2500) } }
   const okTag = key => saved === key && <span className="saved">{'✓'} Kaydedildi</span>
   // ---- Sekmeler ----
   const [tab, setTab] = useState(() => sessionStorage.getItem('setTab') || 'hesap')
-  const TABS = [['hesap', '👤', 'Hesabım'], ...(isA ? [['genel', '⚙️', 'Genel'], ['roller', '🔐', 'Roller ve yetkiler'], ['menu', '🧭', 'Menü ve adlar']] : [])]
+  const TABS = [['hesap', '👤', 'Hesabım'], ...(isA ? [['genel', '⚙️', 'Genel'], ['roller', '🔐', 'Roller ve yetkiler'], ['menu', '🧭', 'Menü ve adlar'], ['form', '📝', 'İş formu']] : [])]
   const sec = TABS.some(t => t[0] === tab) ? tab : 'hesap'
   const lock = (r, p) => ['cari', 'kasa'].includes(p) && r !== 'accountant'
   const setRole = (r, p) => { const c = rp[r] || []; saveSet('role_pages', { ...rp, [r]: c.includes(p) ? c.filter(x => x !== p) : [...c, p] }) }
@@ -988,6 +1051,22 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
         <p className="muted">Hangi rol hangi sayfayı görebilir. Kasa ve Cari sadece admin ile muhasebe rolüne açılabilir.</p>
         <div className="tw"><table className="perm"><thead><tr><th>Rol</th>{PAGES.map(p => <th key={p[0]}>{navL(p[0], p[2])}</th>)}</tr></thead>
           <tbody>{ROLES.filter(r => r !== 'admin').map(r => <tr key={r}><td><b>{rn(r)}</b></td>{PAGES.map(([k]) => <td key={k}><input type="checkbox" disabled={lock(r, k)} checked={!lock(r, k) && (rp[r] || []).includes(k)} onChange={() => setRole(r, k)} /></td>)}</tr>)}</tbody></table></div></div></>}
+
+    {sec === 'form' && isA && <div className="panel set-card"><h3>İş formu: ek alanlar</h3>
+      <p className="muted">Yeni iş ve düzenleme formuna kendi alanlarınızı ekleyin (örn. Aciliyet, Kutu no). Alan adı seçili dil için kaydedilir; başka dilde ad yazmak için dili değiştirin. Adı olmayan dilde mevcut ad gösterilir.</p>
+      {cf.map((d, i) => <div key={d.id} className="panel" style={{ marginTop: 12, padding: 14 }}>
+        <div className="set-fields">
+          <label>Alan adı<input maxLength={40} placeholder={cfLabel(d)} value={d.label?.[lang] ?? ''} onChange={e => cfSet(i, { label: { ...d.label, [lang]: e.target.value } })} /></label>
+          <label>Alan türü<select value={d.type} onChange={e => cfSet(i, { type: e.target.value })}>{CF_TYPES.map(([k, n]) => <option key={k} value={k}>{n}</option>)}</select></label>
+          {d.type === 'select' && <label>Seçenekler (virgülle ayırın)<input value={d.optText ?? ''} onChange={e => cfSet(i, { optText: e.target.value })} /></label>}
+          {d.type !== 'check' && <label style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><input type="checkbox" style={{ width: 'auto' }} checked={!!d.required} onChange={e => cfSet(i, { required: e.target.checked })} />Zorunlu</label>}
+        </div>
+        <div className="set-actions" style={{ marginTop: 10 }}>
+          <button className="btn btn-g" disabled={i === 0} onClick={() => cfMove(i, -1)} aria-label="↑">↑</button>
+          <button className="btn btn-g" disabled={i === cf.length - 1} onClick={() => cfMove(i, 1)} aria-label="↓">↓</button>
+          <button className="btn btn-g btn-del" onClick={() => cfDel(i)}>🗑 Sil</button></div></div>)}
+      {!cf.length && <p className="empty">Henüz ek alan yok</p>}
+      <div className="set-actions"><button className="btn btn-g" onClick={cfAdd} disabled={cf.length >= CF_MAX}>＋ Alan ekle</button><button className="btn btn-p" onClick={() => doSave('form', saveCf)}>Kaydet</button>{okTag('form')}</div></div>}
 
     {sec === 'menu' && isA && <>
       <div className="panel set-card"><h3>Menü adları</h3>
