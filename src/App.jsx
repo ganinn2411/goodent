@@ -40,6 +40,11 @@ let SN = {}
 let MN = {}, MI = {}
 const navL = (k, d) => ((MN[LANG] || {})[k] || '').trim() || d
 const navI = (k, d) => (MI[k] || '').trim() || d
+// Menüden gizlenen sayfalar ve özel bağlantılar (admin ayarlı)
+const mHidden = st => Array.isArray(st?.menu_hidden) ? st.menu_hidden : []
+const mCustom = st => Array.isArray(st?.menu_custom) ? st.menu_custom : []
+const mcLabel = d => d.label?.[LANG] || d.label?.tr || Object.values(d.label || {}).find(Boolean) || ''
+const normUrl = u => { const t = String(u || '').trim(); if (!t) return ''; try { const x = new URL(/^[a-z][a-z0-9+.-]*:/i.test(t) ? t : 'https://' + t); return /^https?:$/.test(x.protocol) ? x.href : '' } catch { return '' } }
 const stg = k => stageLabel(k, LANG, SN)
 const CS = { acik:'Açık', laboratuvarda:'Laboratuvarda', provada:'Provada', teslim_edildi:'Teslim edildi', iptal:'İptal' }
 const TX = { satis_faturasi:'Satış faturası', alis_faturasi:'Alış faturası', tahsilat:'Tahsilat', odeme:'Ödeme', gider:'Gider' }
@@ -194,6 +199,12 @@ Object.assign(EN, { 'İş formu': 'Job form', 'İş formu: ek alanlar': 'Job for
   'Metin': 'Text', 'Uzun metin': 'Long text', 'Sayı': 'Number', 'Tarih': 'Date', 'Seçenek listesi': 'Choice list', 'Evet / Hayır': 'Yes / No', 'Evet': 'Yes', 'Hayır': 'No',
   'Zorunlu alan boş': 'Required field is empty', 'Her alanın bir adı olmalı.': 'Every field needs a name.', 'Seçenek listesi için en az bir seçenek yazın.': 'Enter at least one option for the choice list.',
   'Bu alan silinsin mi? (Eski işlere girilmiş değerler veritabanında kalır ama görünmez)': 'Delete this field? (Values already entered on old jobs stay in the database but will not be shown)' })
+Object.assign(AR, { 'Menü öğeleri': 'عناصر القائمة', 'Özel bağlantılar': 'روابط مخصصة', 'Menü adı': 'اسم القائمة', 'Web adresi': 'عنوان الويب', 'Simge': 'الرمز',
+  'İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar. Aşağıdan menüye kendi web bağlantılarınızı da ekleyebilirsiniz.': 'الصفحات المحددة تظهر في القائمة الجانبية. لا يمكن إخفاء الصفحة الرئيسية والإعدادات. الصفحة المخفية لا تُحذف، فقط تختفي من القائمة. يمكنك أيضًا إضافة روابط ويب خاصة بك إلى القائمة من الأسفل.',
+  '＋ Bağlantı ekle': '＋ إضافة رابط', 'Henüz özel bağlantı yok': 'لا توجد روابط مخصصة بعد', 'Her bağlantının bir adı olmalı.': 'يجب أن يكون لكل رابط اسم.', 'Geçerli bir web adresi yazın (https://...).': 'اكتب عنوان ويب صالحًا (https://...).', 'Bu bağlantı menüden silinsin mi?': 'هل تريد حذف هذا الرابط من القائمة؟' })
+Object.assign(EN, { 'Menü öğeleri': 'Menu items', 'Özel bağlantılar': 'Custom links', 'Menü adı': 'Menu name', 'Web adresi': 'Web address', 'Simge': 'Icon',
+  'İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar. Aşağıdan menüye kendi web bağlantılarınızı da ekleyebilirsiniz.': 'Checked pages appear in the side menu. Home and Settings cannot be hidden. A hidden page is not deleted, it just leaves the menu. You can also add your own web links to the menu below.',
+  '＋ Bağlantı ekle': '＋ Add link', 'Henüz özel bağlantı yok': 'No custom links yet', 'Her bağlantının bir adı olmalı.': 'Every link needs a name.', 'Geçerli bir web adresi yazın (https://...).': 'Enter a valid web address (https://...).', 'Bu bağlantı menüden silinsin mi?': 'Remove this link from the menu?' })
 const DICT = { ar: AR, en: EN }
 const orig = new WeakMap()
 function trNode(n, D) {
@@ -411,7 +422,8 @@ function Shell({ user, lang, setL }) {
     {menu && <div className="scrim" onClick={() => setMenu(false)} />}
     <aside className={'side ' + (menu ? 'open' : '')}>
       <div className="logo"><i>🦷</i>{settings.lab_name || 'Goodent'}</div>
-      {NAV.filter(n => ok(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setJf(null); setMenu(false) }}>{navI(k, ic)} {navL(k, l)}</button>)}
+      {NAV.filter(n => ok(n[0]) && !mHidden(settings).includes(n[0])).map(([k, ic, l]) => <button key={k} className={cur === k ? 'on' : ''} onClick={() => { setPage(k); setJf(null); setMenu(false) }}>{navI(k, ic)} {navL(k, l)}</button>)}
+      {mCustom(settings).filter(d => normUrl(d.url)).map(d => <button key={d.id} onClick={() => { window.open(normUrl(d.url), '_blank', 'noopener,noreferrer'); setMenu(false) }}>{(d.icon || '').trim() || '🔗'} {mcLabel(d)}</button>)}
       <div className="sp" /><button onClick={() => sb.auth.signOut()}>{navI('out', '🚪')} {navL('out', 'Çıkış')}</button>
     </aside>
     <div className="main">
@@ -960,6 +972,25 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
     setMnm(Object.fromEntries(menuItems.map(([k]) => [k, (settings.menu_names || {})[lang]?.[k] || ''])))
     setMic(Object.fromEntries(menuItems.map(([k]) => [k, (settings.menu_icons || {})[k] || ''])))
   }, [lang, JSON.stringify([settings.menu_names || {}, settings.menu_icons || {}])])
+  // ---- Menü öğeleri: göster/gizle + özel bağlantılar ----
+  const [mh, setMh] = useState([]), [mc, setMc] = useState([])
+  useEffect(() => { setMh(mHidden(settings)); setMc(mCustom(settings).map(d => ({ ...d, label: { ...(d.label || {}) } }))) }, [JSON.stringify([settings.menu_hidden || [], settings.menu_custom || []])])
+  const mcSet = (i, p) => setMc(a => a.map((d, j) => j === i ? { ...d, ...p } : d))
+  const mcMove = (i, k) => setMc(a => { const b = [...a], j = i + k; if (j < 0 || j >= b.length) return a; [b[i], b[j]] = [b[j], b[i]]; return b })
+  const mcAdd = () => setMc(a => a.length >= 8 ? a : [...a, { id: 'm_' + Math.random().toString(36).slice(2, 8), icon: '🔗', label: {}, url: '' }])
+  const mcDel = async i => { if (await askConfirm('Bu bağlantı menüden silinsin mi?')) setMc(a => a.filter((_, j) => j !== i)) }
+  async function saveItems() {
+    const out = []
+    for (const d of mc) {
+      const label = Object.fromEntries(Object.entries(d.label || {}).map(([k, v]) => [k, String(v || '').trim()]).filter(([, v]) => v))
+      if (!Object.keys(label).length) { notify('Her bağlantının bir adı olmalı.'); return false }
+      const url = normUrl(d.url)
+      if (!url) { notify('Geçerli bir web adresi yazın (https://...).'); return false }
+      out.push({ id: d.id, icon: String(d.icon || '').trim().slice(0, 8) || '🔗', label, url })
+    }
+    if (!(await saveSet('menu_hidden', mh.filter(k => !['dash', 'ayar'].includes(k))))) return false
+    return saveSet('menu_custom', out)
+  }
   async function saveMenu(reset) {
     const names = reset ? {} : Object.fromEntries(menuItems.map(([k, , d]) => [k, (mnm[k] || '').trim(), d]).filter(([, v, d]) => v && v !== d).map(([k, v]) => [k, v]))
     const icons = reset ? {} : Object.fromEntries(menuItems.map(([k, i]) => [k, (mic[k] || '').trim(), i]).filter(([, v, i]) => v && v !== i).map(([k, v]) => [k, v]))
@@ -1069,6 +1100,22 @@ function Settings({ me, settings, saveSet, load, user, lang, setL }) {
       <div className="set-actions"><button className="btn btn-g" onClick={cfAdd} disabled={cf.length >= CF_MAX}>＋ Alan ekle</button><button className="btn btn-p" onClick={() => doSave('form', saveCf)}>Kaydet</button>{okTag('form')}</div></div>}
 
     {sec === 'menu' && isA && <>
+      <div className="panel set-card"><h3>Menü öğeleri</h3>
+        <p className="muted">İşaretli sayfalar soldaki menüde görünür. Ana sayfa ve Ayarlar kapatılamaz. Gizlenen sayfa silinmez, sadece menüden kalkar. Aşağıdan menüye kendi web bağlantılarınızı da ekleyebilirsiniz.</p>
+        <div className="set-fields menu-grid">{NAV.map(([k, ic, d]) => <label key={k} style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}><input type="checkbox" style={{ width: 'auto' }} disabled={['dash', 'ayar'].includes(k)} checked={!mh.includes(k)} onChange={e => setMh(a => e.target.checked ? a.filter(x => x !== k) : [...a, k])} />{navI(k, ic)} {navL(k, d)}</label>)}</div>
+        <h3 style={{ marginTop: 22 }}>Özel bağlantılar</h3>
+        {mc.map((d, i) => <div key={d.id} className="panel" style={{ marginTop: 12, padding: 14 }}>
+          <div className="set-fields">
+            <label>Simge<input maxLength={8} value={d.icon ?? ''} onChange={e => mcSet(i, { icon: e.target.value })} /></label>
+            <label>Menü adı<input maxLength={24} placeholder={mcLabel(d)} value={d.label?.[lang] ?? ''} onChange={e => mcSet(i, { label: { ...d.label, [lang]: e.target.value } })} /></label>
+            <label>Web adresi<input dir="ltr" placeholder="https://..." value={d.url ?? ''} onChange={e => mcSet(i, { url: e.target.value })} /></label>
+          </div>
+          <div className="set-actions" style={{ marginTop: 10 }}>
+            <button className="btn btn-g" disabled={i === 0} onClick={() => mcMove(i, -1)} aria-label="↑">↑</button>
+            <button className="btn btn-g" disabled={i === mc.length - 1} onClick={() => mcMove(i, 1)} aria-label="↓">↓</button>
+            <button className="btn btn-g btn-del" onClick={() => mcDel(i)}>🗑 Sil</button></div></div>)}
+        {!mc.length && <p className="empty">Henüz özel bağlantı yok</p>}
+        <div className="set-actions"><button className="btn btn-g" onClick={mcAdd} disabled={mc.length >= 8}>＋ Bağlantı ekle</button><button className="btn btn-p" onClick={() => doSave('mitems', saveItems)}>Kaydet</button>{okTag('mitems')}</div></div>
       <div className="panel set-card"><h3>Menü adları</h3>
         <p className="muted">Soldaki menüde görünen ad ve simgeler. Adlar seçili dil için, simgeler tüm diller için kaydedilir. Boş bırakılan ad varsayılanı kullanır. Simge için herhangi bir emoji yazabilirsiniz.</p>
         <div className="set-fields menu-grid">{menuItems.map(([k, ic, d]) => <label key={k}>{d}<span className="menu-row">
