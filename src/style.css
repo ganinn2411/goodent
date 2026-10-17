@@ -626,3 +626,29 @@ input[type=checkbox],input[type=radio]{width:auto;accent-color:var(--acc)}
 /* Giriş ekranı: "Beni hatırla" / kabul koşulları onay kutusu */
 .auth-card .auth-chk{flex-direction:row;align-items:center;gap:10px;font-weight:500;font-size:13px;color:var(--ink);cursor:pointer;user-select:none}
 .auth-card .auth-chk input{width:18px;height:18px;padding:0;flex:none;cursor:pointer}
+/* ---- Randevu takvimi ---- */
+.apc-wrap{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:16px;align-items:start}
+.apc .ph h3{text-align:center;text-transform:capitalize}
+.apc-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:6px}
+.apc-head{margin-bottom:6px}
+.apc-head div{text-align:center;font-size:12px;font-weight:600;color:var(--mut);padding:4px 0;text-transform:capitalize}
+.apc-cell{min-height:98px;padding:6px;border-radius:12px;border:1px solid var(--line);background:var(--glass);cursor:pointer;display:flex;flex-direction:column;gap:3px;overflow:hidden;text-align:start;outline:none}
+.apc-cell:hover{border-color:var(--line-2);background:var(--glass-2)}
+.apc-cell:focus-visible{border-color:var(--acc)}
+.apc-cell.out{opacity:.45}
+.apc-cell.sel{border-color:var(--acc);box-shadow:0 0 0 1px var(--acc) inset}
+.apc-cell b{font-size:13px;width:24px;height:24px;display:grid;place-items:center;border-radius:50%}
+.apc-cell.today b{background:var(--acc);color:#fff}
+.apc-ev{font-size:11px;line-height:1.35;padding:2px 6px;border-radius:6px;background:rgba(56,189,248,.16);color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;border-inline-start:3px solid var(--acc)}
+.apc-cell small{font-size:11px;color:var(--mut)}
+.apc-n{display:none;font-style:normal;font-size:11px;font-weight:700;min-width:18px;height:18px;line-height:18px;text-align:center;border-radius:9px;background:var(--acc);color:#fff;padding:0 5px}
+.apc-day h3{text-transform:capitalize}
+.apc-item{display:flex;justify-content:space-between;gap:10px;align-items:flex-start;padding:10px 0;border-bottom:1px solid var(--line)}
+.apc-item small{color:var(--mut)}
+@media(max-width:900px){.apc-wrap{grid-template-columns:1fr}}
+@media(max-width:700px){
+  .apc-grid{gap:4px}
+  .apc-cell{min-height:54px;padding:4px;align-items:center}
+  .apc-ev,.apc-cell small{display:none}
+  .apc-n{display:inline-block}
+}
