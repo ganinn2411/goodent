@@ -348,9 +348,7 @@ function Shell({ user, lang, setL }) {
   const ctx = { cases, staff, me, name, load, user, settings, go }
   const pages = {
     dash: <Dash {...ctx} />, stat: <Stats {...ctx} showMoney={ok('kasa')} />, ayar: <Settings {...ctx} saveSet={saveSet} lang={lang} setL={setL} />, isler: <Jobs key={jf || 'all'} {...ctx} init={jf} />, gorev: <Mine {...ctx} />, ekip: <Team {...ctx} />, tara: <ScanPage lang={lang} stageNames={settings.stage_names} onClose={() => setPage('dash')} />,
-    randevu: <Crud title="Randevular" table="appointments" sel="*, doctors(full_name)" order={['starts_at', true]} add="Yeni randevu"
-      cols={[{ label:'Başlık', k:'title' }, { label:'Tarih', r: r => fmt(r.starts_at) }, { label:'Doktor', r: r => r.doctors?.full_name || '—' }, { k:'notes', label:'Not' }]}
-      fields={[{ k:'title', label:'Başlık', required:true, w:1 }, { k:'starts_at', label:'Tarih / saat', type:'datetime-local', required:true }, { k:'doctor_id', label:'Doktor', type:'select', from:['doctors','id','full_name'] }, { k:'notes', label:'Not', type:'textarea', w:1 }]} />,
+    randevu: <Calendar />,
     cari: <Crud title="Cari Hesaplar (klinikler & tedarikçiler)" table="accounts" order={['name', true]} add="Yeni cari"
       cols={[{ k:'name', label:'Ad' }, { label:'Tür', r: r => <span className={'pill ' + (r.type === 'musteri' ? '' : 'y')}>{r.type === 'musteri' ? 'Müşteri' : 'Tedarikçi'}</span> }, { k:'phone', label:'Telefon' }, { k:'address', label:'Adres' }]}
       fields={[{ k:'name', label:'Ad', required:true, w:1 }, { k:'type', label:'Tür', type:'select', options:[{ v:'musteri', l:'Müşteri (klinik)' }, { v:'tedarikci', l:'Tedarikçi' }], def:'musteri' }, { k:'phone', label:'Telefon' }, { k:'address', label:'Adres', w:1 }]} />,
@@ -639,6 +637,97 @@ function Team({ cases, staff, me, load }) {
     return <div className="panel" key={p.id}><div className="ph"><div className="av">{p.full_name[0].toUpperCase()}</div><h3>{p.full_name}</h3><span className={'pill ' + (w.length ? 'y' : 'g')}>{w.length ? w.length + ' iş' : 'Boşta'}</span>{me?.role === 'admin' && p.id !== me.id && <button className="btn btn-g btn-del" onClick={() => del(p)}>🗑 Sil</button>}</div>
       {me?.role === 'admin' ? <select value={p.role} disabled={p.id === me.id} onChange={e => role(p.id, e.target.value)}>{ROLES.map(r => <option key={r} value={r}>{rn(r)}</option>)}</select> : <span className="pill">{rn(p.role)}</span>}
       {w.map(({ c, s }) => <p key={s.id}><small>#{c.case_no} · {stg(s.stage)} · {c.work_type}</small></p>)}</div> })}</div></>
+}
+
+// ---- Randevu takvimi (aylık görünüm) ----
+const CAL = {
+  tr: { today: 'Bugün', add: 'Yeni randevu', edit: 'Düzenle', none: 'Bu gün için randevu yok', more: n => `+${n} daha`, fTitle: 'Başlık', fWhen: 'Tarih / saat', fDoc: 'Doktor', fNote: 'Not', save: 'Kaydet', need: 'Başlık gerekli', del: 'Randevu silinsin mi? (Veri tamamen silinmez, arşivlenir)', prev: 'Önceki ay', next: 'Sonraki ay' },
+  en: { today: 'Today', add: 'New appointment', edit: 'Edit', none: 'No appointments on this day', more: n => `+${n} more`, fTitle: 'Title', fWhen: 'Date / time', fDoc: 'Doctor', fNote: 'Note', save: 'Save', need: 'Title is required', del: 'Delete this appointment? (It is archived, not erased)', prev: 'Previous month', next: 'Next month' },
+  ar: { today: 'اليوم', add: 'موعد جديد', edit: 'تعديل', none: 'لا توجد مواعيد في هذا اليوم', more: n => `+${n} أخرى`, fTitle: 'العنوان', fWhen: 'التاريخ / الوقت', fDoc: 'الطبيب', fNote: 'ملاحظة', save: 'حفظ', need: 'العنوان مطلوب', del: 'هل تريد حذف هذا الموعد؟ (يُؤرشف ولا يُمحى نهائيًا)', prev: 'الشهر السابق', next: 'الشهر التالي' },
+}
+const CAL_LOC = { tr: 'tr-TR', en: 'en-GB', ar: 'ar' }
+const ymd = d => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+const monOff = d => (new Date(d.getFullYear(), d.getMonth(), 1).getDay() + 6) % 7 // hafta Pazartesi başlar
+
+function Calendar() {
+  const [cur, setCur] = useState(() => { const d = new Date(); return new Date(d.getFullYear(), d.getMonth(), 1) })
+  const [rows, setRows] = useState([]), [docs, setDocs] = useState([]), [sel, setSel] = useState(ymd(new Date()))
+  const [open, setOpen] = useState(false), [f, setF] = useState({}), [eid, setEid] = useState(null)
+  const t = CAL[LANG] || CAL.tr, lc = CAL_LOC[LANG] || 'tr-TR'
+  const off = monOff(cur)
+  const cells = [...Array(42)].map((_, i) => new Date(cur.getFullYear(), cur.getMonth(), 1 - off + i))
+
+  const load = useCallback(async () => {
+    const a = new Date(cur.getFullYear(), cur.getMonth(), 1 - monOff(cur)), b = new Date(a.getFullYear(), a.getMonth(), a.getDate() + 42)
+    const { data, error } = await sb.from('appointments').select('*, doctors(full_name)').is('deleted_at', null)
+      .gte('starts_at', a.toISOString()).lt('starts_at', b.toISOString()).order('starts_at')
+    if (error) notify(error.message); setRows(data || [])
+  }, [cur])
+  useEffect(() => { load() }, [load])
+  useEffect(() => { sb.from('doctors').select('id,full_name').is('deleted_at', null).then(r => setDocs(r.data || [])) }, [])
+
+  const by = {}; rows.forEach(r => { (by[ymd(new Date(r.starts_at))] ||= []).push(r) })
+  const dayList = by[sel] || []
+  const hm = r => new Date(r.starts_at).toLocaleTimeString(lc, { hour: '2-digit', minute: '2-digit' })
+  const wd = [...Array(7)].map((_, i) => new Date(2024, 0, 1 + i).toLocaleDateString(lc, { weekday: 'short' }))
+  const todayK = ymd(new Date())
+  const go = n => { const d = new Date(cur.getFullYear(), cur.getMonth() + n, 1); setCur(d); setSel(ymd(d)) }
+  const goToday = () => { const d = new Date(); setCur(new Date(d.getFullYear(), d.getMonth(), 1)); setSel(ymd(d)) }
+  const [sy, sm, sd] = sel.split('-').map(Number)
+
+  const openNew = day => { setEid(null); setF({ starts_at: `${day}T09:00` }); setOpen(true) }
+  const openEdit = r => { setEid(r.id); setF({ title: r.title || '', starts_at: loc(r.starts_at), doctor_id: r.doctor_id || '', notes: r.notes || '' }); setOpen(true) }
+  async function save() {
+    if (!(f.title || '').trim()) return notify(t.need)
+    if (!f.starts_at) return notify(t.fWhen)
+    const p = { title: f.title.trim(), starts_at: new Date(f.starts_at).toISOString(), doctor_id: f.doctor_id || null, notes: (f.notes || '').trim() || null }
+    const { error } = eid ? await sb.from('appointments').update(p).eq('id', eid) : await sb.from('appointments').insert(p)
+    if (error) return notify(error.message)
+    const d = new Date(p.starts_at); setCur(new Date(d.getFullYear(), d.getMonth(), 1)); setSel(ymd(d)); setOpen(false); load()
+  }
+  async function del(r) {
+    if (!(await askConfirm(t.del))) return
+    const { error } = await sb.from('appointments').update({ deleted_at: new Date().toISOString() }).eq('id', r.id)
+    if (error) notify(error.message); load()
+  }
+
+  return <div className="apc-wrap">
+    <div className="panel apc">
+      <div className="ph">
+        <button className="btn btn-g" aria-label={t.prev} onClick={() => go(-1)}>‹</button>
+        <h3>{cur.toLocaleDateString(lc, { month: 'long', year: 'numeric' })}</h3>
+        <button className="btn btn-g" aria-label={t.next} onClick={() => go(1)}>›</button>
+        <button className="btn btn-g" onClick={goToday}>{t.today}</button>
+        <button className="btn btn-p" onClick={() => openNew(sel)}>＋ {t.add}</button>
+      </div>
+      <div className="apc-grid apc-head">{wd.map(w => <div key={w}>{w}</div>)}</div>
+      <div className="apc-grid">{cells.map(d => { const k = ymd(d), list = by[k] || []
+        return <div key={k} role="button" tabIndex={0} onClick={() => setSel(k)} onDoubleClick={() => openNew(k)} onKeyDown={e => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); setSel(k) } }}
+          className={'apc-cell' + (d.getMonth() !== cur.getMonth() ? ' out' : '') + (k === todayK ? ' today' : '') + (k === sel ? ' sel' : '')}>
+          <b>{d.getDate()}</b>
+          {list.slice(0, 3).map(r => <span key={r.id} className="apc-ev" title={`${hm(r)} ${r.title}`}>{hm(r)} {r.title}</span>)}
+          {list.length > 3 && <small>{t.more(list.length - 3)}</small>}
+          {list.length > 0 && <i className="apc-n">{list.length}</i>}
+        </div> })}</div>
+    </div>
+    <div className="panel apc-day">
+      <h3>{new Date(sy, sm - 1, sd).toLocaleDateString(lc, { weekday: 'long', day: 'numeric', month: 'long', year: 'numeric' })}</h3>
+      {dayList.length ? dayList.map(r => <div className="apc-item" key={r.id}>
+        <div><b>{hm(r)}</b> · {r.title}<br /><small>{[r.doctors?.full_name, r.notes].filter(Boolean).join(' · ')}</small></div>
+        <span style={{ whiteSpace: 'nowrap' }}><button className="btn btn-g" aria-label={t.edit} onClick={() => openEdit(r)}>✏️</button> <button className="btn btn-g" onClick={() => del(r)}>🗑</button></span>
+      </div>) : <p className="empty">{t.none}</p>}
+      <button className="btn btn-p" style={{ marginTop: 12, width: '100%' }} onClick={() => openNew(sel)}>＋ {t.add}</button>
+    </div>
+    {open && <Modal title={eid ? t.edit : t.add} onClose={() => setOpen(false)}>
+      <div className="fg">
+        <label className="w">{t.fTitle}<input value={f.title ?? ''} onChange={e => setF({ ...f, title: e.target.value })} /></label>
+        <label>{t.fWhen}<DateTimeInput value={f.starts_at ?? ''} onChange={v => setF({ ...f, starts_at: v })} /></label>
+        <label>{t.fDoc}<select value={f.doctor_id ?? ''} onChange={e => setF({ ...f, doctor_id: e.target.value })}><option value="">—</option>{docs.map(d => <option key={d.id} value={d.id}>{d.full_name}</option>)}</select></label>
+        <label className="w">{t.fNote}<textarea rows="3" value={f.notes ?? ''} onChange={e => setF({ ...f, notes: e.target.value })} /></label>
+      </div>
+      <button className="btn btn-p" onClick={save}>{t.save}</button>
+    </Modal>}
+  </div>
 }
 
 function Modal({ title, onClose, children }) {
@@ -1012,7 +1101,7 @@ function UpdateBanner() {
   const busy = u.state === 'downloading' || u.state === 'installing'
   const msg = u.state === 'available' ? t.avail(u.version) : u.state === 'downloading' ? t.down(u.percent || 0) : u.state === 'installing' ? t.inst : t.err
   return <div role="status" style={{ display: 'flex', alignItems: 'center', gap: 12, flexWrap: 'wrap', margin: '10px 14px 0', padding: '10px 14px', borderRadius: 12, background: u.state === 'error' ? '#7f1d1d' : '#1d4ed8', color: '#fff', fontWeight: 600 }}>
-    <span style={{ flex: 1 }}>{u.state === 'error' ? '⚠️' : '⬇️'} {msg}</span>
+    <span style={{ flex: 1 }}>{u.state === 'error' ? '⚠️' : '⬇️'} {msg}{u.state === 'error' && u.message ? <small style={{ display: 'block', fontWeight: 400, opacity: .85, wordBreak: 'break-word' }}>{u.message}</small> : null}</span>
     {u.state === 'available' && <button className="btn" style={{ background: '#fff', color: '#1d4ed8' }} onClick={() => { setU({ state: 'downloading', percent: 0 }); g.downloadUpdate() }}>{t.btn}</button>}
     {u.state === 'downloading' && <div style={{ width: '100%', height: 6, borderRadius: 3, background: '#ffffff44' }}><div style={{ width: (u.percent || 0) + '%', height: '100%', borderRadius: 3, background: '#fff' }} /></div>}
     {u.state === 'error' && <button className="btn" style={{ background: '#fff', color: '#7f1d1d' }} onClick={() => setU(null)}>OK</button>}
